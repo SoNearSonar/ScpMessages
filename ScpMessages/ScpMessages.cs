@@ -1,11 +1,13 @@
 ﻿using Interactables.Interobjects.DoorUtils;
 using InventorySystem.Items;
 using InventorySystem.Items.Keycards;
+using InventorySystem.Items.ThrowableProjectiles;
 using MapGeneration.Distributors;
 using PluginAPI.Core;
 using PluginAPI.Core.Attributes;
 using PluginAPI.Enums;
 using PluginAPI.Events;
+using UnityEngine;
 
 namespace ScpMessages
 {
@@ -118,39 +120,51 @@ namespace ScpMessages
             {
                 return true;
             }
-            
-            switch (item.Category)
+            switch (item.ItemTypeId)
             {
-                case ItemCategory.Medical:
-                    switch (item.ItemTypeId)
-                    {
-                        case ItemType.Painkillers:
-                            ply.SendHintToPlayer(Config.PainkillerUsedMessage);
-                            break;
-                        case ItemType.Medkit:
-                            ply.SendHintToPlayer(Config.MedkitUsedMessage);
-                            break;
-                        case ItemType.Adrenaline:
-                            ply.SendHintToPlayer(Config.AdrenalineUsedMessage);
-                            break;
-                    }
+                case ItemType.Painkillers:
+                    ply.SendHintToPlayer(Config.PainkillerUsedMessage);
                     break;
-                case ItemCategory.SCPItem:
-                    switch (item.ItemTypeId)
-                    {
-                        case ItemType.SCP207:
-                            ply.SendHintToPlayer(Config.Scp207UsedMessage);
-                            break;
-                        case ItemType.SCP268:
-                            ply.SendHintToPlayer(Config.Scp268UsedMessage);
-                            break;
-                        case ItemType.SCP500:
-                            ply.SendHintToPlayer(Config.Scp500UsedMessage);
-                            break;
-                        case ItemType.SCP1853:
-                            ply.SendHintToPlayer(Config.Scp1853UsedMessage);
-                            break;
-                    }
+                case ItemType.Medkit:
+                    ply.SendHintToPlayer(Config.MedkitUsedMessage);
+                    break;
+                case ItemType.Adrenaline:
+                    ply.SendHintToPlayer(Config.AdrenalineUsedMessage);
+                    break;
+                case ItemType.SCP207:
+                    ply.SendHintToPlayer(Config.Scp207UsedMessage);
+                    break;
+                case ItemType.SCP268:
+                    ply.SendHintToPlayer(Config.Scp268UsedMessage);
+                    break;
+                case ItemType.SCP500:
+                    ply.SendHintToPlayer(Config.Scp500UsedMessage);
+                    break;
+                case ItemType.SCP1853:
+                    ply.SendHintToPlayer(Config.Scp1853UsedMessage);
+                    break;
+            }
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerThrowProjectile)]
+        bool OnPlayerThrowProjectile(Player ply, ThrowableItem item, ThrowableItem.ProjectileSettings projectileSettings, bool fullForce)
+        {
+            if (!Config.EnableScpMessages || ply.IsSCP)
+            {
+                return true;
+            }
+
+            switch (item.ItemTypeId)
+            {
+                case ItemType.GrenadeHE:
+                    ply.SendHintToPlayer(Config.GrenadeUsedMessage);
+                    break;
+                case ItemType.GrenadeFlash:
+                    ply.SendHintToPlayer(Config.FlashGrenadeUsedMessage);
+                    break;
+                case ItemType.SCP2176:
+                    ply.SendHintToPlayer(Config.Scp2176UsedMessage);
                     break;
             }
             return true;
