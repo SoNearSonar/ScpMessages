@@ -1,4 +1,5 @@
 ﻿using Interactables.Interobjects.DoorUtils;
+using InventorySystem.Items;
 using InventorySystem.Items.Keycards;
 using MapGeneration.Distributors;
 using PluginAPI.Core;
@@ -17,7 +18,7 @@ namespace ScpMessages
 
         private const string Version = "1.0.0";
 
-        [PluginEntryPoint("ScpMessages", Version, "Displays SCP:CB style messages when certain actions are done", "SoNearSonar")]
+        [PluginEntryPoint("ScpMessages", Version, "Displays messages based on player interactions", "SoNearSonar")]
         void LoadPlugin()
         {
             Instance = this;
@@ -45,7 +46,14 @@ namespace ScpMessages
             }
             else
             {
-                ply.SendHintToPlayer(Config.DoorUnlockedMessage);
+                if (ply.IsBypassEnabled)
+                {
+                    ply.SendHintToPlayer(Config.BypassLockMesage);
+                }
+                else
+                {
+                    ply.SendHintToPlayer(Config.DoorUnlockedMessage);
+                }
             }
 
             return true;
@@ -72,7 +80,78 @@ namespace ScpMessages
             }
             else
             {
-                ply.SendHintToPlayer(Config.LockerUnlockedMessage);
+                if (ply.IsBypassEnabled)
+                {
+                    ply.SendHintToPlayer(Config.BypassLockMesage);
+                }
+                else
+                {
+                    ply.SendHintToPlayer(Config.LockerUnlockedMessage);
+                }
+            }
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerUnlockGenerator)]
+        bool OnPlayerUnlockGenerator(Player ply, Scp079Generator generator)
+        {
+            if (!Config.EnableScpMessages || ply.IsSCP)
+            {
+                return true;
+            }
+
+            if (ply.IsBypassEnabled)
+            {
+                ply.SendHintToPlayer(Config.BypassLockMesage);
+            }
+            else
+            {
+                ply.SendHintToPlayer(Config.GeneratorUnlockedMessage);
+            }
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerUsedItem)]
+        bool OnPlayerUsedItem(Player ply, ItemBase item)
+        {
+            if (!Config.EnableScpMessages || ply.IsSCP)
+            {
+                return true;
+            }
+            
+            switch (item.Category)
+            {
+                case ItemCategory.Medical:
+                    switch (item.ItemTypeId)
+                    {
+                        case ItemType.Painkillers:
+                            ply.SendHintToPlayer(Config.PainkillerUsedMessage);
+                            break;
+                        case ItemType.Medkit:
+                            ply.SendHintToPlayer(Config.MedkitUsedMessage);
+                            break;
+                        case ItemType.Adrenaline:
+                            ply.SendHintToPlayer(Config.AdrenalineUsedMessage);
+                            break;
+                    }
+                    break;
+                case ItemCategory.SCPItem:
+                    switch (item.ItemTypeId)
+                    {
+                        case ItemType.SCP207:
+                            ply.SendHintToPlayer(Config.Scp207UsedMessage);
+                            break;
+                        case ItemType.SCP268:
+                            ply.SendHintToPlayer(Config.Scp268UsedMessage);
+                            break;
+                        case ItemType.SCP500:
+                            ply.SendHintToPlayer(Config.Scp500UsedMessage);
+                            break;
+                        case ItemType.SCP1853:
+                            ply.SendHintToPlayer(Config.Scp1853UsedMessage);
+                            break;
+                    }
+                    break;
             }
             return true;
         }
