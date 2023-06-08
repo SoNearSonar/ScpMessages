@@ -8,6 +8,7 @@ using PluginAPI.Core;
 using PluginAPI.Core.Attributes;
 using PluginAPI.Enums;
 using PluginAPI.Events;
+using ScpMessages.Configs;
 using System;
 using UnityEngine;
 
@@ -17,8 +18,17 @@ namespace ScpMessages
     {
         public static ScpMessages Instance { get; private set; }
 
-        [PluginConfig] 
-        public Config Config;
+        [PluginConfig("main_config.yml")] 
+        public MainConfig MainConfig;
+
+        [PluginConfig("item_config.yml")]
+        public ItemConfig ItemConfig;
+
+        [PluginConfig("map_config.yml")]
+        public MapConfig MapConfig;
+
+        [PluginConfig("damage_config.yml")]
+        public DamageConfig DamageConfig;
 
         private const string Version = "1.0.0";
 
@@ -32,7 +42,7 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
         bool OnPlayerInteractDoor(Player ply, DoorVariant door, bool canOpen)
         {
-            if (!Config.EnableScpMessages || door.RequiredPermissions.RequiredPermissions == 0 || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || door.RequiredPermissions.RequiredPermissions == 0 || ply.IsSCP)
             {
                 return true;
             }
@@ -41,22 +51,22 @@ namespace ScpMessages
             {
                 if (ply.CurrentItem is KeycardItem && !door.RequiredPermissions.CheckPermissions(ply.CurrentItem, ply.ReferenceHub))
                 {
-                    ply.SendHintToPlayer(Config.DoorLockedKeycardMessage);
+                    ply.SendHintToPlayer(MapConfig.DoorLockedKeycardMessage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(Config.DoorLockedMessage);
+                    ply.SendHintToPlayer(MapConfig.DoorLockedMessage);
                 }
             }
             else
             {
                 if (ply.IsBypassEnabled)
                 {
-                    ply.SendHintToPlayer(Config.BypassLockMesage);
+                    ply.SendHintToPlayer(MapConfig.BypassLockMesage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(Config.DoorUnlockedMessage);
+                    ply.SendHintToPlayer(MapConfig.DoorUnlockedMessage);
                 }
             }
 
@@ -66,7 +76,7 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractLocker)]
         bool OnPlayerInteractLocker(Player ply, Locker locker, LockerChamber lockerChamber, bool canOpen)
         {
-            if (!Config.EnableScpMessages || lockerChamber.RequiredPermissions == 0 || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || lockerChamber.RequiredPermissions == 0 || ply.IsSCP)
             {
                 return true;
             }
@@ -75,22 +85,22 @@ namespace ScpMessages
             {
                 if (ply.CurrentItem is KeycardItem keycard && (lockerChamber.RequiredPermissions > keycard.Permissions))
                 {
-                    ply.SendHintToPlayer(Config.LockerLockedKeycardMessage);
+                    ply.SendHintToPlayer(MapConfig.LockerLockedKeycardMessage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(Config.LockerLockedMessage);
+                    ply.SendHintToPlayer(MapConfig.LockerLockedMessage);
                 }
             }
             else
             {
                 if (ply.IsBypassEnabled)
                 {
-                    ply.SendHintToPlayer(Config.BypassLockMesage);
+                    ply.SendHintToPlayer(MapConfig.BypassLockMesage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(Config.LockerUnlockedMessage);
+                    ply.SendHintToPlayer(MapConfig.LockerUnlockedMessage);
                 }
             }
             return true;
@@ -99,26 +109,27 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerUnlockGenerator)]
         bool OnPlayerUnlockGenerator(Player ply, Scp079Generator generator)
         {
-            if (!Config.EnableScpMessages || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || ply.IsSCP)
             {
                 return true;
             }
 
             if (ply.IsBypassEnabled)
             {
-                ply.SendHintToPlayer(Config.BypassLockMesage);
+                ply.SendHintToPlayer(MapConfig.BypassLockMesage);
             }
             else
             {
-                ply.SendHintToPlayer(Config.GeneratorUnlockedMessage);
+                ply.SendHintToPlayer(MapConfig.GeneratorUnlockedMessage);
             }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerUsedItem)]
         bool OnPlayerUsedItem(Player ply, ItemBase item)
+
         {
-            if (!Config.EnableScpMessages || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || ply.IsSCP)
             {
                 return true;
             }
@@ -126,25 +137,25 @@ namespace ScpMessages
             switch (item.ItemTypeId)
             {
                 case ItemType.Painkillers:
-                    ply.SendHintToPlayer(Config.PainkillerUsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.PainkillerUsedMessage);
                     break;
                 case ItemType.Medkit:
-                    ply.SendHintToPlayer(Config.MedkitUsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.MedkitUsedMessage);
                     break;
                 case ItemType.Adrenaline:
-                    ply.SendHintToPlayer(Config.AdrenalineUsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.AdrenalineUsedMessage);
                     break;
                 case ItemType.SCP207:
-                    ply.SendHintToPlayer(Config.Scp207UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp207UsedMessage);
                     break;
                 case ItemType.SCP268:
-                    ply.SendHintToPlayer(Config.Scp268UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp268UsedMessage);
                     break;
                 case ItemType.SCP500:
-                    ply.SendHintToPlayer(Config.Scp500UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp500UsedMessage);
                     break;
                 case ItemType.SCP1853:
-                    ply.SendHintToPlayer(Config.Scp1853UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp1853UsedMessage);
                     break;
             }
             return true;
@@ -153,7 +164,7 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerThrowProjectile)]
         bool OnPlayerThrowProjectile(Player ply, ThrowableItem item, ThrowableItem.ProjectileSettings projectileSettings, bool fullForce)
         {
-            if (!Config.EnableScpMessages || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || ply.IsSCP)
             {
                 return true;
             }
@@ -161,16 +172,16 @@ namespace ScpMessages
             switch (item.ItemTypeId)
             {
                 case ItemType.GrenadeHE:
-                    ply.SendHintToPlayer(Config.GrenadeUsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.GrenadeUsedMessage);
                     break;
                 case ItemType.GrenadeFlash:
-                    ply.SendHintToPlayer(Config.FlashGrenadeUsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.FlashGrenadeUsedMessage);
                     break;
                 case ItemType.SCP018:
-                    ply.SendHintToPlayer(Config.Scp018UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp018UsedMessage);
                     break;
                 case ItemType.SCP2176:
-                    ply.SendHintToPlayer(Config.Scp2176UsedMessage);
+                    ply.SendHintToPlayer(ItemConfig.Scp2176UsedMessage);
                     break;
             }
             return true;
@@ -179,7 +190,7 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerThrowItem)]
         bool OnPlayerThrowItem(Player ply, ItemBase item, Rigidbody rigidBody)
         {
-            if (!Config.EnableScpMessages || ply.IsSCP)
+            if (!MainConfig.EnableScpMessages || ply.IsSCP)
             {
                 return true;
             }
@@ -188,7 +199,7 @@ namespace ScpMessages
             {
                 new Tuple<string, object>("item", item.ItemTypeId.ToString())
             };
-            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(Config.ItemTossed, '%', pairs));
+            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemTossed, '%', pairs));
 
             return true;
         }
@@ -196,58 +207,62 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerDamage)]
         bool OnPlayerDamage(Player ply, Player attacker, DamageHandlerBase damageHandler)
         {
-            if (!Config.EnableScpMessages || ply == null || attacker == null)
+            if (!MainConfig.EnableScpMessages || ply == null || attacker == null)
             {
                 return true;
             }
 
             // Create a list to hold all the tokens to replace (Then replace items in their respective index slot)
-            // Order: 0 (Hitbox), 1 (Player), 2 (Damage)
+            // Order: 0 (Player), 1 (Hitbox), 2 (Damage)
             Tuple<string, object>[] humanPair = new Tuple<string, object>[3];
-            humanPair[1] = new Tuple<string, object>("player", ply.Nickname);
-
+            humanPair[0] = new Tuple<string, object>("player", ply.Nickname);
+            
             if (ply.IsHuman)
             {
                 if (damageHandler is FirearmDamageHandler fiHandler)
                 {
-                    humanPair[0] = new Tuple<string, object>("hitbox", fiHandler.Hitbox.ToString().ToUpperInvariant());
+                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[fiHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[2] = new Tuple<string, object>("damage", fiHandler.DealtHealthDamage);
+                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.FirearmDamageDealtHuman, DamageConfig.FirearmDamageReceivedHuman);
                 }
                 else if (damageHandler is ExplosionDamageHandler exHandler)
                 {
-                    humanPair[0] = new Tuple<string, object>("hitbox", exHandler.Hitbox.ToString().ToUpperInvariant());
+                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[exHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[2] = new Tuple<string, object>("damage", exHandler.DealtHealthDamage);
+                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.ExplosiveDamageDealtHuman, DamageConfig.ExplosiveDamageReceivedHuman);
                 }
                 else if (damageHandler is MicroHidDamageHandler micHandler)
                 {
-                    humanPair[0] = new Tuple<string, object>("hitbox", micHandler.Hitbox.ToString().ToUpperInvariant());
+                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[micHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[2] = new Tuple<string, object>("damage", micHandler.DealtHealthDamage);
                 }
-                else if (damageHandler is JailbirdDamageHandler jaHandler)
+                else if (damageHandler is JailbirdDamageHandler jaHandler && ply != attacker)
                 {
-                    humanPair[0] = new Tuple<string, object>("hitbox", jaHandler.Hitbox.ToString().ToUpperInvariant());
+                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[jaHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[2] = new Tuple<string, object>("damage", jaHandler.DealtHealthDamage);
+                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.JailbirdDamageDealtHuman, DamageConfig.JailbirdDamageReceivedHuman);
                 }
-
-                attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(Config.BulletDamageDealtHuman, '%', humanPair));
-
-                humanPair[1] = new Tuple<string, object>("player", attacker.Nickname);
-
-                ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(Config.BulletDamageReceivedHuman, '%', humanPair));
             }
             else
             {
                 if (damageHandler is FirearmDamageHandler handler)
                 {
-                    attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(Config.BulletDamageDealtSCP, '%', humanPair));
+                    attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(DamageConfig.AttackDamageDealtScp, '%', humanPair));
 
                     humanPair[1] = new Tuple<string, object>("player", attacker.Nickname);
 
-                    ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(Config.BulletDamageReceivedSCP, '%', humanPair));
+                    ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(DamageConfig.AttackDamageReceivedScp, '%', humanPair));
                 }
             }
 
             return true;
+        }
+
+        void SendDamageMessagesToPlayers(Player ply, Player attacker, Tuple<string, object>[] pair, string dealtMessage, string receivedMessage)
+        {
+            attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(dealtMessage, '%', pair));
+            pair[0] = new Tuple<string, object>("player", attacker.Nickname);
+            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(receivedMessage, '%', pair));
         }
     }
 }

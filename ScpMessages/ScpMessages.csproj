@@ -52,7 +52,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Config.cs" />
+    <Compile Include="Configs\DamageConfig.cs" />
+    <Compile Include="Configs\ItemConfig.cs" />
+    <Compile Include="Configs\MainConfig.cs" />
+    <Compile Include="Configs\MapConfig.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="ScpMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

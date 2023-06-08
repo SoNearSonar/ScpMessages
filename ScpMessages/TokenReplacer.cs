@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace ScpMessages
@@ -24,7 +25,7 @@ namespace ScpMessages
 		*/
 
         /// <summary>
-        /// Optimized method that replaces a <see cref="string"/> based on an <see cref="TwoTupleSOList"/>
+        /// A method that replaces a <see cref="string"/> based on a <see cref="Tuple{T1, T2}"/>
         /// </summary>
         /// <param name="source">The string to use as source</param>
         /// <param name="token">The starting token</param>
@@ -55,6 +56,9 @@ namespace ScpMessages
                     // Try to find a tuple
                     foreach (Tuple<string, object> kvp in valuePairs)
                     {
+                        if (kvp == null)
+                            continue;
+
                         int j, k;
                         for (j = 0, k = i + 1; j < kvp.Item1.Length && k < source.Length && source[k] == kvp.Item1[j]; j++, k++) ;
                         // General condition for "key found"
