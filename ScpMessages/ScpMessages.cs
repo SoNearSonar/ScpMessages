@@ -1,5 +1,4 @@
 ﻿using CustomPlayerEffects;
-using HarmonyLib;
 using Interactables.Interobjects.DoorUtils;
 using InventorySystem.Items;
 using InventorySystem.Items.Keycards;
@@ -45,8 +44,6 @@ namespace ScpMessages
 
             Instance = this;
             EventManager.RegisterEvents(this);
-            Harmony Harmory = new Harmony("ScpMessages");
-            Harmory.PatchAll();
         }
 
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
@@ -230,15 +227,32 @@ namespace ScpMessages
             {
                 return true;
             }
-
+            
             ply.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpMessage);
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerReceiveEffect)]
+        bool OnPlayerReceiveEffect(Player ply, StatusEffectBase statusEffect, byte intensity, float duration)
+        {
+            if (!MainConfig.EnableItemMessages)
+            {
+                return true;
+            }
+
+            switch (statusEffect)
+            {
+                case SeveredHands _:
+                    ply.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpTooManyMessage);
+                    break;
+            }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerDamage)]
         bool OnPlayerDamage(Player ply, Player attacker, DamageHandlerBase damageHandler)
         {
-            if (!MainConfig.EnableDamageMessages  || ply == null || attacker == null)
+            if (!MainConfig.EnableDamageMessages || ply == null || attacker == null)
             {
                 return true;
             }
@@ -247,61 +261,61 @@ namespace ScpMessages
             // Order: 0 (Player), 1 (Hitbox), 2 (Damage), 3 (Role)
             Tuple<string, object>[] humanPair = new Tuple<string, object>[4];
             humanPair[0] = new Tuple<string, object>("player", ply.Nickname);
-            humanPair[3] = new Tuple<string, object>("role", attacker.Role.ToString());
+            humanPair[1] = new Tuple<string, object>("role", attacker.Role.ToString());
 
             switch (damageHandler)
             {
                 case FirearmDamageHandler fiHandler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[fiHandler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", fiHandler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[fiHandler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", fiHandler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.FirearmDamageDealt, DamageConfig.FirearmDamageReceived);
                     break;
                 case ExplosionDamageHandler exHandler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[exHandler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", exHandler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[exHandler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", exHandler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.ExplosiveDamageDealt, DamageConfig.ExplosiveDamageReceived);
                     break;
                 case MicroHidDamageHandler micHandler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[micHandler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", micHandler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[micHandler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", micHandler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.MicroHidDamageDealt, DamageConfig.MicroHidDamageReceived);
                     break;
                 case JailbirdDamageHandler jaHandler:
                     if (ply != attacker) // Swinging/using the jailbird on nothing damages the player for 0 HP (Likely a bug)
                     {
-                        humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[jaHandler.Hitbox.ToString().ToUpperInvariant()]);
-                        humanPair[2] = new Tuple<string, object>("damage", jaHandler.DealtHealthDamage);
+                        humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[jaHandler.Hitbox.ToString().ToUpperInvariant()]);
+                        humanPair[3] = new Tuple<string, object>("damage", jaHandler.DealtHealthDamage);
                         SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.JailbirdDamageDealt, DamageConfig.JailbirdDamageReceived);
                     }
                     break;
                 case DisruptorDamageHandler diHandler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[diHandler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", diHandler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[diHandler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", diHandler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.DisruptorDamageDealt, DamageConfig.DisruptorDamageReceived);
                     break;
                 case Scp018DamageHandler scp018Handler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp018Handler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", scp018Handler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp018Handler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", scp018Handler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp018DamageDealt, DamageConfig.Scp018DamageReceived);
                     break;
                 case Scp049DamageHandler scp049Handler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp049Handler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", scp049Handler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp049Handler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", scp049Handler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp049DamageDealt, DamageConfig.Scp049DamageReceived);
                     break;
                 case Scp096DamageHandler scp096Handler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp096Handler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", scp096Handler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp096Handler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", scp096Handler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp096DamageDealt, DamageConfig.Scp096DamageReceived);
                     break;
                 case Scp939DamageHandler scp939Handler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp939Handler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", scp939Handler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp939Handler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", scp939Handler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp939DamageDealt, DamageConfig.Scp939DamageReceived);
                     break;
                 case ScpDamageHandler scpHandler:
-                    humanPair[1] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scpHandler.Hitbox.ToString().ToUpperInvariant()]);
-                    humanPair[2] = new Tuple<string, object>("damage", scpHandler.DealtHealthDamage);
+                    humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scpHandler.Hitbox.ToString().ToUpperInvariant()]);
+                    humanPair[3] = new Tuple<string, object>("damage", scpHandler.DealtHealthDamage);
                     SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.ScpDamageDealt, DamageConfig.ScpDamageReceived);
                     break;
             }
