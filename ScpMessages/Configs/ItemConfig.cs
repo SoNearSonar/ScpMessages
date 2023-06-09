@@ -22,6 +22,9 @@ namespace ScpMessages.Configs
         [Description("The message that is displayed when a player throws SCP-018 (a throwable item used for destruction of environments & players)")]
         public string Scp018UsedMessage { get; set; } = "You threw SCP-018";
 
+        [Description("The message that is displayed when a player consumes a SCP-330 candy")]
+        public string Scp330CandyUsedMessage { get; set; } = "You consumed a SCP-330 candy";
+
         [Description("The message that is displayed when a player uses SCP-207 (a consumable item used for boosting move speed)")]
         public string Scp207UsedMessage { get; set; } = "You used SCP-207";
 
@@ -36,6 +39,12 @@ namespace ScpMessages.Configs
 
         [Description("The message that is displayed when a player throws SCP-2176 (a throwable item used for room interference)")]
         public string Scp2176UsedMessage { get; set; } = "You threw SCP-2176";
+
+        [Description("The message that is displayed when a player picks up candy from SCP-330 (a bowl with candies that grant various effects)")]
+        public string Scp330CandyPickedUpMessage { get; set; } = "You picked up a SCP-330 candy";
+
+        [Description("The message that is displayed when a player picks up more than two candies from SCP-330")]
+        public string Scp330CandyPickedUpTooManyMessage { get; set; } = "Your hands got severed at the wrist";
 
         [Description("The message that is displayed when a player tosses an item from their inventory (Using the T key (default))")]
         public string ItemTossed { get; set; } = "You tossed %item";

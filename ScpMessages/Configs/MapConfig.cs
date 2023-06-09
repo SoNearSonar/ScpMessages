@@ -16,6 +16,9 @@ namespace ScpMessages.Configs
         [Description("The message that is displayed when a player opens a locked door")]
         public string DoorUnlockedMessage { get; set; } = "The keycard was scanned on the panel";
 
+        [Description("The message that is displayed when a player cannot open a fully locked down door")]
+        public string DoorFullLockedMessage { get; set; } = "This door is completely locked down";
+
         [Description("The message that is displayed when a player cannot open a locker")]
         public string LockerLockedMessage { get; set; } = "A keycard is required to operate this locker";
 
