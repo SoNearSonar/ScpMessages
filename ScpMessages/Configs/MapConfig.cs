@@ -30,5 +30,8 @@ namespace ScpMessages.Configs
 
         [Description("The message that is displayed when a player opens a generator")]
         public string GeneratorUnlockedMessage { get; set; } = "The keycard was scanned on the panel";
+
+        [Description("The message that is displayed when a player uses an elevator")]
+        public string ElevatorUsedMessage { get; set; } = "You pressed the elevator button";
     }
 }

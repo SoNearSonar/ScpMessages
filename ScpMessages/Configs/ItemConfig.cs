@@ -4,6 +4,15 @@ namespace ScpMessages.Configs
 {
     public class ItemConfig
     {
+        [Description("The message that is displayed when a player equips light armor")]
+        public string LightArmorUsedMessage { get; set; } = "You put on some light armor";
+
+        [Description("The message that is displayed when a player equips combat armor")]
+        public string CombatArmorUsedMessage { get; set; } = "You put on some combat armor";
+
+        [Description("The message that is displayed when a player equips heavy armor")]
+        public string HeavyArmorUsedMessage { get; set; } = "You put on some heavy armor";
+
         [Description("The message that is displayed when a player throws a grenade")]
         public string GrenadeUsedMessage { get; set; } = "You threw a grenade";
 

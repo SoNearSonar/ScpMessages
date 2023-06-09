@@ -1,13 +1,16 @@
 ﻿using CustomPlayerEffects;
+using Interactables.Interobjects;
 using Interactables.Interobjects.DoorUtils;
 using InventorySystem.Items;
 using InventorySystem.Items.Keycards;
+using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
 using MapGeneration.Distributors;
 using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
 using PluginAPI.Core;
 using PluginAPI.Core.Attributes;
+using PluginAPI.Core.Items;
 using PluginAPI.Enums;
 using PluginAPI.Events;
 using ScpMessages.Configs;
@@ -139,6 +142,22 @@ namespace ScpMessages
             return true;
         }
 
+        [PluginEvent(ServerEventType.PlayerInteractElevator)]
+        bool OnPlayerInteractElevator(Player ply, ElevatorChamber elevator)
+        {
+            if (!MainConfig.EnableMapMessages || ply == null)
+            {
+                return true;
+            }
+
+            Tuple<string, object>[] pairs = new Tuple<string, object>[]
+            {
+                new Tuple<string, object>("level", elevator.CurrentLevel)
+            };
+            ply.SendHintToPlayer(MapConfig.ElevatorUsedMessage);
+            return true;
+        }
+
         [PluginEvent(ServerEventType.PlayerUsedItem)]
         bool OnPlayerUsedItem(Player ply, ItemBase item)
         {
@@ -172,6 +191,29 @@ namespace ScpMessages
                     break;
                 case ItemType.SCP1853:
                     ply.SendHintToPlayer(ItemConfig.Scp1853UsedMessage);
+                    break;
+            }
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerPickupArmor)]
+        bool OnPlayerPickupArmor(Player ply, ItemPickupBase item)
+        {
+            if (!MainConfig.EnableItemMessages || ply.IsSCP)
+            {
+                return true;
+            }
+
+            switch (item.Info.ItemId)
+            {
+                case ItemType.ArmorLight:
+                    ply.SendHintToPlayer(ItemConfig.LightArmorUsedMessage);
+                    break;
+                case ItemType.ArmorCombat:
+                    ply.SendHintToPlayer(ItemConfig.CombatArmorUsedMessage);
+                    break;
+                case ItemType.ArmorHeavy:
+                    ply.SendHintToPlayer(ItemConfig.HeavyArmorUsedMessage);
                     break;
             }
             return true;
@@ -258,7 +300,7 @@ namespace ScpMessages
             }
 
             // Create a list to hold all the tokens to replace (Then replace items in their respective index slot)
-            // Order: 0 (Player), 1 (Hitbox), 2 (Damage), 3 (Role)
+            // Order: 0 (Player), 1 (Role), 2 (Hitbox), 3 (Damage)
             Tuple<string, object>[] humanPair = new Tuple<string, object>[4];
             humanPair[0] = new Tuple<string, object>("player", ply.Nickname);
             humanPair[1] = new Tuple<string, object>("role", attacker.Role.ToString());
