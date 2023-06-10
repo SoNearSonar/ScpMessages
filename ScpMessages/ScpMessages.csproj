@@ -61,6 +61,7 @@
     <Compile Include="Configs\MainConfig.cs" />
     <Compile Include="Configs\MapConfig.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Models\IndividualUserToggleChoice.cs" />
     <Compile Include="ScpMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TokenReplacer.cs" />
