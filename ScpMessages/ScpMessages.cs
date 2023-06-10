@@ -6,22 +6,27 @@ using InventorySystem.Items.Keycards;
 using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
 using MapGeneration.Distributors;
+using Newtonsoft.Json;
 using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
 using PluginAPI.Core;
 using PluginAPI.Core.Attributes;
-using PluginAPI.Core.Items;
 using PluginAPI.Enums;
 using PluginAPI.Events;
+using PluginAPI.Helpers;
 using ScpMessages.Configs;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
+using static RoundSummary;
 
 namespace ScpMessages
 {
     public class ScpMessages
     {
         public static ScpMessages Instance { get; private set; }
+        public Dictionary<string, bool> ToggleScpMessages;
 
         [PluginConfig("main_config.yml")] 
         public MainConfig MainConfig;
@@ -36,6 +41,8 @@ namespace ScpMessages
         public DamageConfig DamageConfig;
 
         private const string Version = "1.0.0";
+        private readonly string toggleDir = Path.Combine(Paths.Configs, "ScpMessages", "Stored");
+
 
         [PluginEntryPoint("ScpMessages", Version, "Displays messages based on player interactions", "SoNearSonar")]
         void LoadPlugin()
@@ -47,6 +54,93 @@ namespace ScpMessages
 
             Instance = this;
             EventManager.RegisterEvents(this);
+        }
+
+        [PluginEvent(ServerEventType.WaitingForPlayers)]
+        bool OnWaitingForPlayers()
+        {
+            try
+            {
+
+                string filePath = Path.Combine(toggleDir, "toggles.json");
+                if (!Directory.Exists(toggleDir))
+                {
+                    Directory.CreateDirectory(toggleDir);
+                }
+
+                if (!File.Exists(filePath))
+                {
+                    File.Create(filePath);
+                }
+
+                ToggleScpMessages = JsonConvert.DeserializeObject<Dictionary<string, bool>>(File.ReadAllText(filePath));
+                if (ToggleScpMessages == null)
+                {
+                    ToggleScpMessages = new Dictionary<string, bool>();
+                }
+            }
+            catch (Exception)
+            {
+                Log.Error("There was an error trying to read the playerbase toggle preferences, using default of enabled for everyone", "ERROR");
+                ToggleScpMessages = new Dictionary<string, bool>();
+            }
+
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.RoundEnd)]
+        bool OnRoundEnd(LeadingTeam leadingTeam)
+        {
+            SaveTogglesToFile();
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.RoundRestart)]
+        bool OnRoundRestart()
+        {
+            // Just in case a restart was forced
+            SaveTogglesToFile();
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerJoined)]
+        bool OnPlayerJoined(Player ply)
+        {
+            if (!ToggleScpMessages.ContainsKey(ply.UserId))
+            {
+                ToggleScpMessages[ply.UserId] = true;
+            }
+
+            if (ToggleScpMessages[ply.UserId])
+            {
+                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nTo disable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
+            }
+            else
+            {
+                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nTo enable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
+            }
+
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerGameConsoleCommand)]
+        bool OnConsoleCommandUsed(Player ply, string command, string[] arguments)
+        {
+            if (command.ToLowerInvariant().Equals("scpmsg"))
+            {
+                ToggleScpMessages[ply.UserId] = !ToggleScpMessages[ply.UserId];
+                if (ToggleScpMessages[ply.UserId])
+                {
+                    ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nTo disable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 5);
+                }
+                else
+                {
+                    ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nTo enable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 5);
+                }
+                return false;
+            }
+
+            return true;
         }
 
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
@@ -367,9 +461,31 @@ namespace ScpMessages
 
         void SendDamageMessagesToPlayers(Player ply, Player attacker, Tuple<string, object>[] pair, string dealtMessage, string receivedMessage)
         {
-            attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(dealtMessage, '%', pair));
+            if (ToggleScpMessages[attacker.UserId])
+            {
+                attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(dealtMessage, '%', pair));
+            }
+
             pair[0] = new Tuple<string, object>("player", attacker.Nickname);
-            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(receivedMessage, '%', pair));
+
+            if (ToggleScpMessages[ply.UserId])
+            {
+                ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(receivedMessage, '%', pair));
+            }
+        }
+
+        void SaveTogglesToFile()
+        {
+            try
+            {
+                string contents = JsonConvert.SerializeObject(ToggleScpMessages, Formatting.Indented);
+                string filePath = Path.Combine(toggleDir, "toggles.json");
+                File.WriteAllText(filePath, contents);
+            }
+            catch (Exception)
+            {
+                Log.Error("There was an error trying to save the playerbase toggle preferences", "ERROR");
+            }
         }
     }
 }

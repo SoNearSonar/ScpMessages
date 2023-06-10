@@ -7,8 +7,11 @@ namespace ScpMessages
     {
         public static void SendHintToPlayer(this Player ply, string message)
         {
-            message = "\n\n\n\n\n\n\n\n" + message;
-            ply.ReceiveHint(message, HintEffectPresets.FadeInAndOut(0.25f), 5);
+            if (ScpMessages.Instance.ToggleScpMessages[ply.UserId])
+            {
+                message = "\n\n\n\n\n\n\n\n" + message;
+                ply.ReceiveHint(message, HintEffectPresets.FadeInAndOut(0.25f), 5);
+            }
         }
     }
 }
