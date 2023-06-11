@@ -116,11 +116,11 @@ namespace ScpMessages
 
             if (ToggleScpMessages[ply.UserId].EnableScpMessages)
             {
-                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nTo disable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
+                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nTo disable all messages, do <color=orange>.scpmsg all</color> in your console (tilde (~) key)", 15);
             }
             else
             {
-                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nTo enable, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
+                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nTo enable all messages, do <color=orange>.scpmsg all</color> in your console (tilde (~) key)", 15);
             }
 
             return true;
