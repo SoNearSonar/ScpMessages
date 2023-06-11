@@ -26,3 +26,16 @@ The following token is the only one that is in this config and it is only for th
 ```
 - %level | The current level the elevator is in
 ```
+
+# Console command
+ScpMessages has one console command for individually toggling plugin messages:
+```
+.scpmsg (all, damage, item, map, list, help)
+-> all (Toggles all interaction messages)
+-> damage (Toggles damage interaction messages)
+-> item (Toggles item interaction messages)
+-> map (Toggles map interaction messages)
+-> list (Lists all the interactions that are true/false for you)
+-> help (Lists all the arguments above)
+```
+Example usage: ```.scpmsg all```
