@@ -142,6 +142,7 @@ namespace ScpMessages
                                     ply.SendConsoleMessage("[ScpMessages] All messages cannot be toggled as they are disabled for all users", "red");
                                     break;
                                 }
+
                                 ToggleScpMessages[ply.UserId].EnableScpMessages = !ToggleScpMessages[ply.UserId].EnableScpMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableScpMessages)
                                 {
@@ -158,6 +159,7 @@ namespace ScpMessages
                                     ply.SendConsoleMessage("[ScpMessages] Damage messages cannot be toggled as they are disabled for all users", "red");
                                     break;
                                 }
+
                                 ToggleScpMessages[ply.UserId].EnableDamageMessages = !ToggleScpMessages[ply.UserId].EnableDamageMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableDamageMessages)
                                 {
@@ -174,6 +176,7 @@ namespace ScpMessages
                                     ply.SendConsoleMessage("[ScpMessages] Item messages cannot be toggled as they are disabled for all users", "red");
                                     break;
                                 }
+
                                 ToggleScpMessages[ply.UserId].EnableItemMessages = !ToggleScpMessages[ply.UserId].EnableItemMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableItemMessages)
                                 {
@@ -190,6 +193,7 @@ namespace ScpMessages
                                     ply.SendConsoleMessage("[ScpMessages] Map messages cannot be toggled as they are disabled for all users", "red");
                                     break;
                                 }
+
                                 ToggleScpMessages[ply.UserId].EnableMapMessages = !ToggleScpMessages[ply.UserId].EnableMapMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableMapMessages)
                                 {
