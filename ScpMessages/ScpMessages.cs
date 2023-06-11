@@ -332,7 +332,7 @@ namespace ScpMessages
             {
                 new Tuple<string, object>("level", elevator.CurrentLevel)
             };
-            ply.SendHintToPlayer(MapConfig.ElevatorUsedMessage);
+            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(MapConfig.ElevatorUsedMessage, '%', pairs));
             return true;
         }
 

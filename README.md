@@ -14,6 +14,9 @@
 - Tokens for dynamic message content in the above events
 - Persistent individual user message toggling in-game
 
+## Message Token Documentation:
+[Documentation](https://github.com/SoNearSonar/ScpMessages/blob/main/Documentation.md)
+
 ## Install:
 ### LocalAdmin Install:
 Installing this plugin can be done automatically by running the following command in your LocalAdmin console: ```p install SoNearSonar/ScpMessages```
