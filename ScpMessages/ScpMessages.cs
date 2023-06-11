@@ -143,7 +143,7 @@ namespace ScpMessages
             {
                 if (ply.DoNotTrack)
                 {
-                    ply.SendConsoleMessage("[ScpMessages] You cannot enable/disable messages because your account has do not track enabled. Messages are disabled by default", "red");
+                    ply.SendConsoleMessage("[ScpMessages] You cannot use ScpMessage console commands because your account has do not track enabled. Messages are disabled by default", "red");
                     return false;
                 }
 
