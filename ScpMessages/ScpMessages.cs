@@ -64,7 +64,6 @@ namespace ScpMessages
         {
             try
             {
-
                 string filePath = Path.Combine(toggleDir, "toggles.json");
                 if (!Directory.Exists(toggleDir))
                 {
@@ -84,7 +83,7 @@ namespace ScpMessages
             }
             catch (Exception)
             {
-                Log.Error("There was an error trying to read the playerbase toggle preferences, using default of enabled for everyone", "ScpMessages");
+                Log.Error("There was an error trying to read the playerbase toggle preferences, using default of enabled for everyone. The plugin could be loaded for the first time!", "ScpMessages");
                 ToggleScpMessages = new Dictionary<string, IndividualUserToggleChoice>();
             }
 
@@ -109,6 +108,17 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerJoined)]
         bool OnPlayerJoined(Player ply)
         {
+            if (ply.DoNotTrack)
+            {
+                if (ToggleScpMessages.ContainsKey(ply.UserId))
+                {
+                    ToggleScpMessages.Remove(ply.UserId);
+                }
+
+                ply.SendBroadcast("ScpMessages is on this server which displays messages at the bottom of your screen. You have set your account to not be tracked so messages are disabled", 15);
+                return true;
+            }
+
             if (!ToggleScpMessages.ContainsKey(ply.UserId))
             {
                 ToggleScpMessages[ply.UserId] = new IndividualUserToggleChoice();
@@ -131,6 +141,19 @@ namespace ScpMessages
         {
             if (command.ToLowerInvariant().Equals("scpmsg"))
             {
+                if (ply.DoNotTrack)
+                {
+                    ply.SendConsoleMessage("[ScpMessages] You cannot enable/disable messages because your account has do not track enabled. Messages are disabled by default", "red");
+                    return false;
+                }
+
+
+                string additionalText = string.Empty;
+                if (!ToggleScpMessages[ply.UserId].EnableScpMessages)
+                {
+                    additionalText = ", however you have all interactions disabled so toggling this interaction type will have no effect";
+                }
+
                 switch (arguments.Length)
                 {
                     case 1:
@@ -163,11 +186,11 @@ namespace ScpMessages
                                 ToggleScpMessages[ply.UserId].EnableDamageMessages = !ToggleScpMessages[ply.UserId].EnableDamageMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableDamageMessages)
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will display at the bottom for interactions");
+                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will display at the bottom for interactions" + additionalText);
                                 }
                                 else
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will not display at the bottom for interactions", "red");
+                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will not display at the bottom for interactions" + additionalText, "red");
                                 }
                                 break;
                             case "item":
@@ -180,11 +203,11 @@ namespace ScpMessages
                                 ToggleScpMessages[ply.UserId].EnableItemMessages = !ToggleScpMessages[ply.UserId].EnableItemMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableItemMessages)
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Item messages will display at the bottom for interactions");
+                                    ply.SendConsoleMessage("[ScpMessages] Item messages will display at the bottom for interactions" + additionalText);
                                 }
                                 else
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Item messages will not display at the bottom for interactions", "red");
+                                    ply.SendConsoleMessage("[ScpMessages] Item messages will not display at the bottom for interactions" + additionalText, "red");
                                 }
                                 break;
                             case "map":
@@ -197,11 +220,11 @@ namespace ScpMessages
                                 ToggleScpMessages[ply.UserId].EnableMapMessages = !ToggleScpMessages[ply.UserId].EnableMapMessages;
                                 if (ToggleScpMessages[ply.UserId].EnableMapMessages)
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Map messages will display at the bottom for interactions");
+                                    ply.SendConsoleMessage("[ScpMessages] Map messages will display at the bottom for interactions" + additionalText);
                                 }
                                 else
                                 {
-                                    ply.SendConsoleMessage("[ScpMessages] Map messages will not display at the bottom for interactions", "red");
+                                    ply.SendConsoleMessage("[ScpMessages] Map messages will not display at the bottom for interactions" + additionalText, "red");
                                 }
                                 break;
                             case "list":
@@ -220,12 +243,17 @@ namespace ScpMessages
                                 builder2.Append("- .scpmsg damage (Toggle damage messages)" + Environment.NewLine);
                                 builder2.Append("- .scpmsg item (Toggle item messages)" + Environment.NewLine);
                                 builder2.Append("- .scpmsg map (Toggle map messages)" + Environment.NewLine);
+                                builder2.Append("- .scpmsg list (List all message toggles on your account)" + Environment.NewLine);
+                                builder2.Append("- .scpmsg help (Displays this message again)" + Environment.NewLine);
                                 ply.SendConsoleMessage(builder2.ToString(), "yellow");
+                                break;
+                            default:
+                                ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help)", "yellow");
                                 break;
                         }
                         break;
                     default:
-                        ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help))", "yellow");
+                        ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help)", "yellow");
                         break;
 
                 }
@@ -239,7 +267,12 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
         bool OnPlayerInteractDoor(Player ply, DoorVariant door, bool canOpen)
         {
-            if (!MainConfig.EnableMapMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableMapMessages  || door.RequiredPermissions.RequiredPermissions == 0 || ply.IsSCP)
+            if (!MainConfig.EnableMapMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId)
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableMapMessages
+                || door.RequiredPermissions.RequiredPermissions == 0 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -280,7 +313,12 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractLocker)]
         bool OnPlayerInteractLocker(Player ply, Locker locker, LockerChamber lockerChamber, bool canOpen)
         {
-            if (!MainConfig.EnableMapMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableMapMessages || lockerChamber.RequiredPermissions == 0 || ply.IsSCP)
+            if (!MainConfig.EnableMapMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId)
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
+                || lockerChamber.RequiredPermissions == 0 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -313,7 +351,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerUnlockGenerator)]
         bool OnPlayerUnlockGenerator(Player ply, Scp079Generator generator)
         {
-            if (!MainConfig.EnableMapMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableMapMessages || ply.IsSCP)
+            if (!MainConfig.EnableMapMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId)
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -332,7 +374,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractElevator)]
         bool OnPlayerInteractElevator(Player ply, ElevatorChamber elevator)
         {
-            if (!MainConfig.EnableMapMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableMapMessages || ply == null)
+            if (!MainConfig.EnableMapMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
+                || ply == null)
             {
                 return true;
             }
@@ -348,7 +394,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerUsedItem)]
         bool OnPlayerUsedItem(Player ply, ItemBase item)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableItemMessages || ply.IsSCP)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -386,7 +436,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerPickupArmor)]
         bool OnPlayerPickupArmor(Player ply, ItemPickupBase item)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableItemMessages || ply.IsSCP)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -409,7 +463,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerThrowProjectile)]
         bool OnPlayerThrowProjectile(Player ply, ThrowableItem item, ThrowableItem.ProjectileSettings projectileSettings, bool fullForce)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableItemMessages || ply.IsSCP)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -435,7 +493,11 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerThrowItem)]
         bool OnPlayerThrowItem(Player ply, ItemBase item, Rigidbody rigidBody)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableItemMessages || ply.IsSCP)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
+                || ply.IsSCP)
             {
                 return true;
             }
@@ -452,7 +514,10 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerInteractScp330)]
         bool OnPlayerInteractScp330(Player ply)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages  || !ToggleScpMessages[ply.UserId].EnableItemMessages)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId)
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages)
             {
                 return true;
             }
@@ -464,7 +529,10 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerReceiveEffect)]
         bool OnPlayerReceiveEffect(Player ply, StatusEffectBase statusEffect, byte intensity, float duration)
         {
-            if (!MainConfig.EnableItemMessages || !ToggleScpMessages[ply.UserId].EnableScpMessages || !ToggleScpMessages[ply.UserId].EnableDamageMessages)
+            if (!MainConfig.EnableItemMessages 
+                || !ToggleScpMessages.ContainsKey(ply.UserId) 
+                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
+                || !ToggleScpMessages[ply.UserId].EnableItemMessages)
             {
                 return true;
             }
@@ -552,16 +620,21 @@ namespace ScpMessages
             return true;
         }
 
+
         void SendDamageMessagesToPlayers(Player ply, Player attacker, Tuple<string, object>[] pair, string dealtMessage, string receivedMessage)
         {
-            if (ToggleScpMessages[attacker.UserId].EnableScpMessages && ToggleScpMessages[attacker.UserId].EnableDamageMessages)
+            if (ToggleScpMessages.ContainsKey(attacker.UserId) 
+                && (ToggleScpMessages[attacker.UserId].EnableScpMessages 
+                && ToggleScpMessages[attacker.UserId].EnableDamageMessages))
             {
                 attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(dealtMessage, '%', pair));
             }
 
             pair[0] = new Tuple<string, object>("player", attacker.Nickname);
 
-            if (ToggleScpMessages[ply.UserId].EnableScpMessages && ToggleScpMessages[ply.UserId].EnableDamageMessages)
+            if (ToggleScpMessages.ContainsKey(ply.UserId) 
+                && (ToggleScpMessages[attacker.UserId].EnableScpMessages 
+                && ToggleScpMessages[attacker.UserId].EnableDamageMessages))
             {
                 ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(receivedMessage, '%', pair));
             }

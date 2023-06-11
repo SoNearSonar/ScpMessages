@@ -12,3 +12,7 @@ ScpMessages/bin/Debug/
 ScpMessages/obj/Debug/
 
 packages/Newtonsoft.Json.13.0.3/
+
+ScpMessages/obj/Release/
+
+ScpMessages/bin/Release/
