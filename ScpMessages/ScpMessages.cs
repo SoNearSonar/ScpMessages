@@ -116,11 +116,11 @@ namespace ScpMessages
 
             if (ToggleScpMessages[ply.UserId].EnableScpMessages)
             {
-                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nTo disable all messages, do <color=orange>.scpmsg all</color> in your console (tilde (~) key)", 15);
+                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
             }
             else
             {
-                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nTo enable all messages, do <color=orange>.scpmsg all</color> in your console (tilde (~) key)", 15);
+                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
             }
 
             return true;
@@ -205,18 +205,27 @@ namespace ScpMessages
                                 }
                                 break;
                             case "list":
-                                StringBuilder builder = StringBuilderPool.Shared.Rent();
-                                builder.Append(Environment.NewLine + "[ScpMessages] These are the messages that are toggled for you:" + Environment.NewLine);
-                                builder.Append("- Plugin messages (all): " + ToggleScpMessages[ply.UserId].EnableScpMessages + Environment.NewLine);
-                                builder.Append("- Damage messages (damage): " + ToggleScpMessages[ply.UserId].EnableDamageMessages + Environment.NewLine);
-                                builder.Append("- Item messages (item): " + ToggleScpMessages[ply.UserId].EnableItemMessages + Environment.NewLine);
-                                builder.Append("- Map messages (map): " + ToggleScpMessages[ply.UserId].EnableMapMessages + Environment.NewLine);
-                                ply.SendConsoleMessage(builder.ToString(), "yellow");
+                                StringBuilder builder1 = StringBuilderPool.Shared.Rent();
+                                builder1.Append(Environment.NewLine + "[ScpMessages] These are the messages that are toggled for you:" + Environment.NewLine);
+                                builder1.Append("- Plugin messages (all): " + ToggleScpMessages[ply.UserId].EnableScpMessages + Environment.NewLine);
+                                builder1.Append("- Damage messages (damage): " + ToggleScpMessages[ply.UserId].EnableDamageMessages + Environment.NewLine);
+                                builder1.Append("- Item messages (item): " + ToggleScpMessages[ply.UserId].EnableItemMessages + Environment.NewLine);
+                                builder1.Append("- Map messages (map): " + ToggleScpMessages[ply.UserId].EnableMapMessages + Environment.NewLine);
+                                ply.SendConsoleMessage(builder1.ToString(), "yellow");
+                                break;
+                            case "help":
+                                StringBuilder builder2 = StringBuilderPool.Shared.Rent();
+                                builder2.Append(Environment.NewLine + "[ScpMessages] These are the commands you can do" + Environment.NewLine);
+                                builder2.Append("- .scpmsg all (Toggle all plugin messages)" + Environment.NewLine);
+                                builder2.Append("- .scpmsg damage (Toggle damage messages)" + Environment.NewLine);
+                                builder2.Append("- .scpmsg item (Toggle item messages)" + Environment.NewLine);
+                                builder2.Append("- .scpmsg map (Toggle map messages)" + Environment.NewLine);
+                                ply.SendConsoleMessage(builder2.ToString(), "yellow");
                                 break;
                         }
                         break;
                     default:
-                        ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list))", "yellow");
+                        ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help))", "yellow");
                         break;
 
                 }
