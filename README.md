@@ -25,7 +25,8 @@ Installing this plugin can be done automatically by running the following comman
 Installing this plugin can be done manually by going to the [releases](https://github.com/SoNearSonar/ScpMessages/releases) page and following these steps:
 1. Download the ScpMessages.dll file
 2. Go to this directory: ```PluginAPI/plugins/(your_port)``` and place the above .dll file there
-3. Restart your server
+3. Go to this directory: ```PluginAPI/plugins/(your_port)/dependencies``` add the .dll's in the dependencies.zip in there
+4. Restart your server
 
 ## Notes:
 This plugin will create a file for storing user choices for the ScpMessages message displays at ```config/(your_port)/ScpMessages/Stored/toggles.json```. 
