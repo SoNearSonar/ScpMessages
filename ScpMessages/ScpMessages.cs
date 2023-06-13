@@ -7,7 +7,6 @@ using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
 using MapGeneration.Distributors;
 using Newtonsoft.Json;
-using NorthwoodLib.Pools;
 using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
 using PluginAPI.Core;
@@ -20,7 +19,6 @@ using ScpMessages.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using UnityEngine;
 using static RoundSummary;
 
@@ -136,134 +134,6 @@ namespace ScpMessages
             return true;
         }
 
-        [PluginEvent(ServerEventType.PlayerGameConsoleCommand)]
-        bool OnConsoleCommandUsed(Player ply, string command, string[] arguments)
-        {
-            if (command.ToLowerInvariant().Equals("scpmsg"))
-            {
-                if (ply.DoNotTrack)
-                {
-                    ply.SendConsoleMessage("[ScpMessages] You cannot use ScpMessage console commands because your account has do not track enabled. Messages are disabled by default", "red");
-                    return false;
-                }
-
-
-                string additionalText = string.Empty;
-                if (!ToggleScpMessages[ply.UserId].EnableScpMessages)
-                {
-                    additionalText = ", however you have all interactions disabled so toggling this interaction type will have no effect";
-                }
-
-                switch (arguments.Length)
-                {
-                    case 1:
-                        switch (arguments[0].ToLowerInvariant())
-                        {
-                            case "all":
-                                if (!MainConfig.EnableScpMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] All messages cannot be toggled as they are disabled for all users", "red");
-                                    break;
-                                }
-
-                                ToggleScpMessages[ply.UserId].EnableScpMessages = !ToggleScpMessages[ply.UserId].EnableScpMessages;
-                                if (ToggleScpMessages[ply.UserId].EnableScpMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] All messages will display at the bottom for interactions");
-                                }
-                                else
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] All messages will not display at the bottom for interactions", "red");
-                                }
-                                break;
-                            case "damage":
-                                if (!MainConfig.EnableDamageMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Damage messages cannot be toggled as they are disabled for all users", "red");
-                                    break;
-                                }
-
-                                ToggleScpMessages[ply.UserId].EnableDamageMessages = !ToggleScpMessages[ply.UserId].EnableDamageMessages;
-                                if (ToggleScpMessages[ply.UserId].EnableDamageMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will display at the bottom for interactions" + additionalText);
-                                }
-                                else
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Damage messages will not display at the bottom for interactions" + additionalText, "red");
-                                }
-                                break;
-                            case "item":
-                                if (!MainConfig.EnableItemMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Item messages cannot be toggled as they are disabled for all users", "red");
-                                    break;
-                                }
-
-                                ToggleScpMessages[ply.UserId].EnableItemMessages = !ToggleScpMessages[ply.UserId].EnableItemMessages;
-                                if (ToggleScpMessages[ply.UserId].EnableItemMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Item messages will display at the bottom for interactions" + additionalText);
-                                }
-                                else
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Item messages will not display at the bottom for interactions" + additionalText, "red");
-                                }
-                                break;
-                            case "map":
-                                if (!MainConfig.EnableMapMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Map messages cannot be toggled as they are disabled for all users", "red");
-                                    break;
-                                }
-
-                                ToggleScpMessages[ply.UserId].EnableMapMessages = !ToggleScpMessages[ply.UserId].EnableMapMessages;
-                                if (ToggleScpMessages[ply.UserId].EnableMapMessages)
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Map messages will display at the bottom for interactions" + additionalText);
-                                }
-                                else
-                                {
-                                    ply.SendConsoleMessage("[ScpMessages] Map messages will not display at the bottom for interactions" + additionalText, "red");
-                                }
-                                break;
-                            case "list":
-                                StringBuilder builder1 = StringBuilderPool.Shared.Rent();
-                                builder1.Append(Environment.NewLine + "[ScpMessages] These are the messages that are toggled for you:" + Environment.NewLine);
-                                builder1.Append("- Plugin messages (all): " + ToggleScpMessages[ply.UserId].EnableScpMessages + Environment.NewLine);
-                                builder1.Append("- Damage messages (damage): " + ToggleScpMessages[ply.UserId].EnableDamageMessages + Environment.NewLine);
-                                builder1.Append("- Item messages (item): " + ToggleScpMessages[ply.UserId].EnableItemMessages + Environment.NewLine);
-                                builder1.Append("- Map messages (map): " + ToggleScpMessages[ply.UserId].EnableMapMessages + Environment.NewLine);
-                                ply.SendConsoleMessage(builder1.ToString(), "yellow");
-                                break;
-                            case "help":
-                                StringBuilder builder2 = StringBuilderPool.Shared.Rent();
-                                builder2.Append(Environment.NewLine + "[ScpMessages] These are the commands you can do" + Environment.NewLine);
-                                builder2.Append("- .scpmsg all (Toggle all plugin messages)" + Environment.NewLine);
-                                builder2.Append("- .scpmsg damage (Toggle damage messages)" + Environment.NewLine);
-                                builder2.Append("- .scpmsg item (Toggle item messages)" + Environment.NewLine);
-                                builder2.Append("- .scpmsg map (Toggle map messages)" + Environment.NewLine);
-                                builder2.Append("- .scpmsg list (List all message toggles on your account)" + Environment.NewLine);
-                                builder2.Append("- .scpmsg help (Displays this message again)" + Environment.NewLine);
-                                ply.SendConsoleMessage(builder2.ToString(), "yellow");
-                                break;
-                            default:
-                                ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help)", "yellow");
-                                break;
-                        }
-                        break;
-                    default:
-                        ply.SendConsoleMessage(Environment.NewLine + "[ScpMessages] Usage: .scpmsg (all, damage, item, map, list, help)", "yellow");
-                        break;
-
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
         bool OnPlayerInteractDoor(Player ply, DoorVariant door, bool canOpen)
         {
@@ -325,7 +195,7 @@ namespace ScpMessages
 
             if (!canOpen)
             {
-                if (ply.CurrentItem is KeycardItem keycard && (lockerChamber.RequiredPermissions > keycard.Permissions))
+                if (ply.CurrentItem is KeycardItem keycard && !lockerChamber.RequiredPermissions.HasFlagFast(keycard.Permissions))
                 {
                     ply.SendHintToPlayer(MapConfig.LockerLockedKeycardMessage);
                 }
