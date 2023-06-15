@@ -113,7 +113,11 @@ namespace ScpMessages
                     ToggleScpMessages.Remove(ply.UserId);
                 }
 
-                ply.SendBroadcast("ScpMessages is on this server which displays messages at the bottom of your screen. You have set your account to not be tracked so messages are disabled", 15);
+                if (MainConfig.EnableBroadcastMessages)
+                {
+                    ply.SendBroadcast(MainConfig.BroadcastMessages["do_not_track"].Message, MainConfig.BroadcastMessages["do_not_track"].Time);
+                }
+
                 return true;
             }
 
@@ -122,13 +126,16 @@ namespace ScpMessages
                 ToggleScpMessages[ply.UserId] = new IndividualUserToggleChoice();
             }
 
-            if (ToggleScpMessages[ply.UserId].EnableScpMessages)
+            if (MainConfig.EnableBroadcastMessages)
             {
-                ply.SendBroadcast("ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
-            }
-            else
-            {
-                ply.SendBroadcast("ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)", 15);
+                if (ToggleScpMessages[ply.UserId].EnableScpMessages)
+                {
+                    ply.SendBroadcast(MainConfig.BroadcastMessages["enabled_for_player"].Message, MainConfig.BroadcastMessages["enabled_for_player"].Time);
+                }
+                else
+                {
+                    ply.SendBroadcast(MainConfig.BroadcastMessages["disabled_for_player"].Message, MainConfig.BroadcastMessages["disabled_for_player"].Time);
+                }
             }
 
             return true;

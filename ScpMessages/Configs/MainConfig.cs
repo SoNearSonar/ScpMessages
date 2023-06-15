@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using ScpMessages.Models;
+using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace ScpMessages.Configs
 {
@@ -15,5 +17,37 @@ namespace ScpMessages.Configs
 
         [Description("If the plugin should or should not play messages when users try to use doors/lockers/generators")]
         public bool EnableMapMessages { get; set; } = true;
+
+        [Description("If the plugin should or should not play broadcast messages when users join the server")]
+        public bool EnableBroadcastMessages { get; set; } = true;
+
+        [Description("The broadcast messages that are played when the user has ScpMessages on/off or has Do Not Track on")]
+        public Dictionary<string, ScpMessageBroadcast> BroadcastMessages { get; set; } = new Dictionary<string, ScpMessageBroadcast>()
+        {
+            { 
+                "enabled_for_player", 
+                new ScpMessageBroadcast
+                (
+                    "ScpMessages is on for you, you will see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)",
+                    15
+                )
+            },
+            {
+                "disabled_for_player",
+                new ScpMessageBroadcast
+                (
+                    "ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)",
+                    15
+                )
+            },
+            {
+                "do_not_track",
+                new ScpMessageBroadcast
+                (
+                    "ScpMessages is on this server which displays messages at the bottom of your screen. You have set your account to not be tracked so messages are disabled",
+                    15
+                )
+            },
+        };
     }
 }
