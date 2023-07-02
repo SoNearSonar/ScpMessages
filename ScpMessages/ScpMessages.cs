@@ -156,7 +156,7 @@ namespace ScpMessages
 
             if (!canOpen)
             {
-                if (ply.CurrentItem is KeycardItem && !door.RequiredPermissions.CheckPermissions(ply.CurrentItem, ply.ReferenceHub))
+                if (ply.CurrentItem is KeycardItem)
                 {
                     ply.SendHintToPlayer(MapConfig.DoorLockedKeycardMessage);
                 }
