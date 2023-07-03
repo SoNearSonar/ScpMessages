@@ -202,7 +202,7 @@ namespace ScpMessages
 
             if (!canOpen)
             {
-                if (ply.CurrentItem is KeycardItem keycard && !lockerChamber.RequiredPermissions.HasFlagFast(keycard.Permissions))
+                if (ply.CurrentItem is KeycardItem keycard)
                 {
                     ply.SendHintToPlayer(MapConfig.LockerLockedKeycardMessage);
                 }
