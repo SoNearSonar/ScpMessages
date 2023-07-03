@@ -43,6 +43,9 @@ namespace ScpMessages.Configs
         [Description("The message that is displayed when a player uses SCP-500 (a medical item that can cure anything)")]
         public string Scp500UsedMessage { get; set; } = "You used SCP-500";
 
+        [Description("The message that is displayed when a player uses SCP-1576 (an item which lets you talk to spectators while you are alive)")]
+        public string Scp1576UsedMessage { get; set; } = "You used SCP-1576";
+
         [Description("The message that is displayed when a player uses SCP-1853 (a consumable item used for boosting interaction speed)")]
         public string Scp1853UsedMessage { get; set; } = "You used SCP-1853";
 

@@ -303,9 +303,13 @@ namespace ScpMessages
                 case ItemType.SCP500:
                     ply.SendHintToPlayer(ItemConfig.Scp500UsedMessage);
                     break;
+                case ItemType.SCP1576:
+                    ply.SendHintToPlayer(ItemConfig.Scp1576UsedMessage);
+                    break;
                 case ItemType.SCP1853:
                     ply.SendHintToPlayer(ItemConfig.Scp1853UsedMessage);
                     break;
+
             }
             return true;
         }
@@ -389,7 +393,7 @@ namespace ScpMessages
         }
 
         [PluginEvent(ServerEventType.PlayerInteractScp330)]
-        bool OnPlayerInteractScp330(Player ply)
+        bool OnPlayerInteractScp330(Player ply, int uses, bool playSound, bool allowPunishment)
         {
             if (!MainConfig.EnableItemMessages 
                 || !ToggleScpMessages.ContainsKey(ply.UserId)
