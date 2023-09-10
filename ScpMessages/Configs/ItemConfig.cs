@@ -59,6 +59,18 @@ namespace ScpMessages.Configs
         public string Scp330CandyPickedUpTooManyMessage { get; set; } = "Your hands got severed at the wrist";
 
         [Description("The message that is displayed when a player tosses an item from their inventory (Using the T key (default))")]
-        public string ItemTossed { get; set; } = "You tossed %item";
+        public string ItemTossed { get; set; } = "You tossed a %item";
+
+        [Description("The message that is displayed when a player drops an item from their inventory")]
+        public string ItemDropped { get; set; } = "You dropped a %item";
+
+        [Description("The message that is displayed when a player picks up an item")]
+        public string ItemPickedUp { get; set; } = "You picked up a %item";
+
+        [Description("The message that is displayed when a player drops ammo")]
+        public string AmmoDropped { get; set; } = "You dropped %amount ammo of %item";
+
+        [Description("The message that is displayed when a player picks up ammo")]
+        public string AmmoPickedUp { get; set; } = "You picked up a box of %item ammo";
     }
 }

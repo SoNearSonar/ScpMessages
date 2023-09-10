@@ -16,7 +16,7 @@ The following tokens work for all messages within the damage config:
 ```
 
 ## Item interaction tokens
-The following token is the only one that is in this config and it is only for the ItemTossed message within the item config:
+The following token is the only one that is in this config and it is for the ItemTossed, ItemDropped, ItemPickedUp, AmmoDropped, AmmoPickedUp messages within the item config:
 ```
 - %item | The item name that was thrown
 ```
@@ -27,6 +27,12 @@ The following token is the only one that is in this config and it is only for th
 - %level | The current level the elevator is in
 ```
 
+## Team respawn tokens
+The following token is the only one that is in this config and it is only for the NineTailedFoxSpawnMessage message within the item config:
+```
+- %team | The MTF unit name that spawned in in the latest wave
+```
+
 # Console command
 ScpMessages has one console command for individually toggling plugin messages:
 ```
@@ -35,6 +41,8 @@ ScpMessages has one console command for individually toggling plugin messages:
 -> damage (Toggles damage interaction messages)
 -> item (Toggles item interaction messages)
 -> map (Toggles map interaction messages)
+-> team (Toggles team respawn messages)
+-> time (non-negative number, show) (How long in seconds messages appear for)
 -> list (Lists all the interactions that are true/false for you)
 -> help (Lists all the arguments above)
 ```

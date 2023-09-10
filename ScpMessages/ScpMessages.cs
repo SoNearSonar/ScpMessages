@@ -1,11 +1,6 @@
 ﻿using CustomPlayerEffects;
-using Interactables.Interobjects;
-using Interactables.Interobjects.DoorUtils;
-using InventorySystem.Items;
+using HarmonyLib;
 using InventorySystem.Items.Keycards;
-using InventorySystem.Items.Pickups;
-using InventorySystem.Items.ThrowableProjectiles;
-using MapGeneration.Distributors;
 using Newtonsoft.Json;
 using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
@@ -14,20 +9,22 @@ using PluginAPI.Core.Attributes;
 using PluginAPI.Enums;
 using PluginAPI.Events;
 using PluginAPI.Helpers;
+using Respawning;
 using ScpMessages.Configs;
 using ScpMessages.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
-using static RoundSummary;
 
 namespace ScpMessages
 {
     public class ScpMessages
     {
         public static ScpMessages Instance { get; private set; }
-        public Dictionary<string, IndividualUserToggleChoice> ToggleScpMessages;
+        public Dictionary<string, IndividualUserPreferences> IndividualUserPreferences;
+        public int TeamNamesAssigned = 0;
+        public List<Player> PeopleRespawnedOnMTF = new List<Player>();
+        public SpawnableTeamType NextKnownTeam;
 
         [PluginConfig("main_config.yml")] 
         public MainConfig MainConfig;
@@ -41,8 +38,12 @@ namespace ScpMessages
         [PluginConfig("damage_config.yml")]
         public DamageConfig DamageConfig;
 
-        private const string Version = "1.0.0";
-        private readonly string toggleDir = Path.Combine(Paths.Configs, "ScpMessages", "Stored");
+        [PluginConfig("team_config.yml")]
+        public TeamConfig TeamConfig;
+
+        private const string Version = "2.0.0";
+        private readonly string _toggleDir = Path.Combine(Paths.Configs, "ScpMessages", "Stored");
+        private Harmony _harmony;
 
 
         [PluginEntryPoint("ScpMessages", Version, "Displays messages based on player interactions", "SoNearSonar")]
@@ -55,17 +56,28 @@ namespace ScpMessages
 
             Instance = this;
             EventManager.RegisterEvents(this);
+
+            try
+            {
+                _harmony = new Harmony("com.sonearsonar.scpmessages");
+                _harmony.PatchAll();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Failed to patch all Harmony patches\n{e}", "ERROR");
+                _harmony.UnpatchAll(_harmony.Id);
+            }
         }
 
         [PluginEvent(ServerEventType.WaitingForPlayers)]
-        bool OnWaitingForPlayers()
+        bool OnWaitingForPlayers(WaitingForPlayersEvent args)
         {
             try
             {
-                string filePath = Path.Combine(toggleDir, "toggles.json");
-                if (!Directory.Exists(toggleDir))
+                string filePath = Path.Combine(_toggleDir, "toggles.json");
+                if (!Directory.Exists(_toggleDir))
                 {
-                    Directory.CreateDirectory(toggleDir);
+                    Directory.CreateDirectory(_toggleDir);
                 }
 
                 if (!File.Exists(filePath))
@@ -73,30 +85,30 @@ namespace ScpMessages
                     File.Create(filePath);
                 }
 
-                ToggleScpMessages = JsonConvert.DeserializeObject<Dictionary<string, IndividualUserToggleChoice>>(File.ReadAllText(filePath));
-                if (ToggleScpMessages == null)
+                IndividualUserPreferences = JsonConvert.DeserializeObject<Dictionary<string, IndividualUserPreferences>>(File.ReadAllText(filePath));
+                if (IndividualUserPreferences == null)
                 {
-                    ToggleScpMessages = new Dictionary<string, IndividualUserToggleChoice>();
+                    IndividualUserPreferences = new Dictionary<string, IndividualUserPreferences>();
                 }
             }
             catch (Exception)
             {
                 Log.Error("There was an error trying to read the playerbase toggle preferences, using default of enabled for everyone. The plugin could be loaded for the first time!", "ScpMessages");
-                ToggleScpMessages = new Dictionary<string, IndividualUserToggleChoice>();
+                IndividualUserPreferences = new Dictionary<string, IndividualUserPreferences>();
             }
 
             return true;
         }
 
         [PluginEvent(ServerEventType.RoundEnd)]
-        bool OnRoundEnd(LeadingTeam leadingTeam)
+        bool OnRoundEnd(RoundEndEvent args)
         {
             SaveTogglesToFile();
             return true;
         }
 
         [PluginEvent(ServerEventType.RoundRestart)]
-        bool OnRoundRestart()
+        bool OnRoundRestart(RoundRestartEvent args)
         {
             // Just in case a restart was forced
             SaveTogglesToFile();
@@ -104,37 +116,37 @@ namespace ScpMessages
         }
 
         [PluginEvent(ServerEventType.PlayerJoined)]
-        bool OnPlayerJoined(Player ply)
+        bool OnPlayerJoined(PlayerJoinedEvent args)
         {
-            if (ply.DoNotTrack)
+            if (args.Player.DoNotTrack)
             {
-                if (ToggleScpMessages.ContainsKey(ply.UserId))
+                if (IndividualUserPreferences.ContainsKey(args.Player.UserId))
                 {
-                    ToggleScpMessages.Remove(ply.UserId);
+                    IndividualUserPreferences.Remove(args.Player.UserId);
                 }
 
                 if (MainConfig.EnableBroadcastMessages)
                 {
-                    ply.SendBroadcast(MainConfig.BroadcastMessages["do_not_track"].Message, MainConfig.BroadcastMessages["do_not_track"].Time);
+                    args.Player.SendBroadcast(MainConfig.BroadcastMessages["do_not_track"].Message, MainConfig.BroadcastMessages["do_not_track"].Time);
                 }
 
                 return true;
             }
 
-            if (!ToggleScpMessages.ContainsKey(ply.UserId))
+            if (!IndividualUserPreferences.ContainsKey(args.Player.UserId))
             {
-                ToggleScpMessages[ply.UserId] = new IndividualUserToggleChoice();
+                IndividualUserPreferences[args.Player.UserId] = new IndividualUserPreferences();
             }
 
             if (MainConfig.EnableBroadcastMessages)
             {
-                if (ToggleScpMessages[ply.UserId].EnableScpMessages)
+                if (IndividualUserPreferences[args.Player.UserId].EnableScpMessages)
                 {
-                    ply.SendBroadcast(MainConfig.BroadcastMessages["enabled_for_player"].Message, MainConfig.BroadcastMessages["enabled_for_player"].Time);
+                    args.Player.SendBroadcast(MainConfig.BroadcastMessages["enabled_for_player"].Message, MainConfig.BroadcastMessages["enabled_for_player"].Time);
                 }
                 else
                 {
-                    ply.SendBroadcast(MainConfig.BroadcastMessages["disabled_for_player"].Message, MainConfig.BroadcastMessages["disabled_for_player"].Time);
+                    args.Player.SendBroadcast(MainConfig.BroadcastMessages["disabled_for_player"].Message, MainConfig.BroadcastMessages["disabled_for_player"].Time);
                 }
             }
 
@@ -142,45 +154,43 @@ namespace ScpMessages
         }
 
         [PluginEvent(ServerEventType.PlayerInteractDoor)]
-        bool OnPlayerInteractDoor(Player ply, DoorVariant door, bool canOpen)
+        bool OnPlayerInteractDoor(PlayerInteractDoorEvent args)
         {
             if (!MainConfig.EnableMapMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId)
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableMapMessages
-                || door.RequiredPermissions.RequiredPermissions == 0 
-                || ply.IsSCP)
+                || !IndividualUserPreferences.ContainsKey(args.Player.UserId)
+                || !IndividualUserPreferences[args.Player.UserId].EnableScpMessages 
+                || !IndividualUserPreferences[args.Player.UserId].EnableMapMessages
+                || args.Door.RequiredPermissions.RequiredPermissions == 0 
+                || args.Player.IsSCP)
             {
                 return true;
             }
 
-            if (!canOpen)
+            if (!args.CanOpen)
             {
-                if (ply.CurrentItem is KeycardItem)
+                if (args.Door.ActiveLocks > 0)
                 {
-                    ply.SendHintToPlayer(MapConfig.DoorLockedKeycardMessage);
+                    args.Player.SendHintToPlayer(MapConfig.DoorFullLockedMessage);
+                }
+
+                if (args.Player.CurrentItem is KeycardItem)
+                {
+                    args.Player.SendHintToPlayer(MapConfig.DoorLockedKeycardMessage);
                 }
                 else
                 {
-                    if (door.ActiveLocks > 0)
-                    {
-                        ply.SendHintToPlayer(MapConfig.DoorFullLockedMessage);
-                    }
-                    else
-                    {
-                        ply.SendHintToPlayer(MapConfig.DoorLockedMessage);
-                    }
+                    args.Player.SendHintToPlayer(MapConfig.DoorLockedMessage);
                 }
             }
             else
             {
-                if (ply.IsBypassEnabled)
+                if (args.Player.IsBypassEnabled)
                 {
-                    ply.SendHintToPlayer(MapConfig.BypassLockMesage);
+                    args.Player.SendHintToPlayer(MapConfig.BypassLockMesage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(MapConfig.DoorUnlockedMessage);
+                    args.Player.SendHintToPlayer(MapConfig.DoorUnlockedMessage);
                 }
             }
 
@@ -188,249 +198,278 @@ namespace ScpMessages
         }
 
         [PluginEvent(ServerEventType.PlayerInteractLocker)]
-        bool OnPlayerInteractLocker(Player ply, Locker locker, LockerChamber lockerChamber, bool canOpen)
+        bool OnPlayerInteractLocker(PlayerInteractLockerEvent args)
         {
             if (!MainConfig.EnableMapMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId)
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
-                || lockerChamber.RequiredPermissions == 0 
-                || ply.IsSCP)
+                || !IndividualUserPreferences.ContainsKey(args.Player.UserId)
+                || !IndividualUserPreferences[args.Player.UserId].EnableScpMessages 
+                || !IndividualUserPreferences[args.Player.UserId].EnableMapMessages 
+                || args.Chamber.RequiredPermissions == 0 
+                || args.Player.IsSCP)
             {
                 return true;
             }
 
-            if (!canOpen)
+            if (!args.CanOpen)
             {
-                if (ply.CurrentItem is KeycardItem keycard)
+                if (args.Player.CurrentItem is KeycardItem)
                 {
-                    ply.SendHintToPlayer(MapConfig.LockerLockedKeycardMessage);
+                    args.Player.SendHintToPlayer(MapConfig.LockerLockedKeycardMessage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(MapConfig.LockerLockedMessage);
+                    args.Player.SendHintToPlayer(MapConfig.LockerLockedMessage);
                 }
             }
             else
             {
-                if (ply.IsBypassEnabled)
+                if (args.Player.IsBypassEnabled)
                 {
-                    ply.SendHintToPlayer(MapConfig.BypassLockMesage);
+                    args.Player.SendHintToPlayer(MapConfig.BypassLockMesage);
                 }
                 else
                 {
-                    ply.SendHintToPlayer(MapConfig.LockerUnlockedMessage);
+                    args.Player.SendHintToPlayer(MapConfig.LockerUnlockedMessage);
                 }
             }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerUnlockGenerator)]
-        bool OnPlayerUnlockGenerator(Player ply, Scp079Generator generator)
+        bool OnPlayerUnlockGenerator(PlayerUnlockGeneratorEvent args)
         {
             if (!MainConfig.EnableMapMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId)
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
-                || ply.IsSCP)
+                || !IndividualUserPreferences.ContainsKey(args.Player.UserId)
+                || !IndividualUserPreferences[args.Player.UserId].EnableScpMessages 
+                || !IndividualUserPreferences[args.Player.UserId].EnableMapMessages 
+                || args.Player.IsSCP)
             {
                 return true;
             }
 
-            if (ply.IsBypassEnabled)
+            if (args.Player.IsBypassEnabled)
             {
-                ply.SendHintToPlayer(MapConfig.BypassLockMesage);
+                args.Player.SendHintToPlayer(MapConfig.BypassLockMesage);
             }
             else
             {
-                ply.SendHintToPlayer(MapConfig.GeneratorUnlockedMessage);
+                args.Player.SendHintToPlayer(MapConfig.GeneratorUnlockedMessage);
             }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerInteractElevator)]
-        bool OnPlayerInteractElevator(Player ply, ElevatorChamber elevator)
+        bool OnPlayerInteractElevator(PlayerInteractElevatorEvent args)
         {
             if (!MainConfig.EnableMapMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableMapMessages 
-                || ply == null)
+                || !IndividualUserPreferences.ContainsKey(args.Player.UserId) 
+                || !IndividualUserPreferences[args.Player.UserId].EnableScpMessages 
+                || !IndividualUserPreferences[args.Player.UserId].EnableMapMessages 
+                || args.Player == null)
             {
                 return true;
             }
 
             Tuple<string, object>[] pairs = new Tuple<string, object>[]
             {
-                new Tuple<string, object>("level", elevator.CurrentLevel)
+                new Tuple<string, object>("level", args.Elevator.CurrentLevel)
             };
-            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(MapConfig.ElevatorUsedMessage, '%', pairs));
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(MapConfig.ElevatorUsedMessage, '%', pairs));
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerUsedItem)]
-        bool OnPlayerUsedItem(Player ply, ItemBase item)
+        bool OnPlayerUsedItem(PlayerUsedItemEvent args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
-                || ply.IsSCP)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
-            }
 
-            switch (item.ItemTypeId)
+            switch (args.Item.ItemTypeId)
             {
                 case ItemType.Painkillers:
-                    ply.SendHintToPlayer(ItemConfig.PainkillerUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.PainkillerUsedMessage);
                     break;
                 case ItemType.Medkit:
-                    ply.SendHintToPlayer(ItemConfig.MedkitUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.MedkitUsedMessage);
                     break;
                 case ItemType.Adrenaline:
-                    ply.SendHintToPlayer(ItemConfig.AdrenalineUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.AdrenalineUsedMessage);
                     break;
                 case ItemType.SCP330:
-                    ply.SendHintToPlayer(ItemConfig.Scp330CandyUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp330CandyUsedMessage);
                     break;
                 case ItemType.SCP207:
-                    ply.SendHintToPlayer(ItemConfig.Scp207UsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp207UsedMessage);
                     break;
                 case ItemType.SCP268:
-                    ply.SendHintToPlayer(ItemConfig.Scp268UsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp268UsedMessage);
                     break;
                 case ItemType.SCP500:
-                    ply.SendHintToPlayer(ItemConfig.Scp500UsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp500UsedMessage);
                     break;
                 case ItemType.SCP1576:
-                    ply.SendHintToPlayer(ItemConfig.Scp1576UsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp1576UsedMessage);
                     break;
                 case ItemType.SCP1853:
-                    ply.SendHintToPlayer(ItemConfig.Scp1853UsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp1853UsedMessage);
                     break;
 
             }
             return true;
         }
 
-        [PluginEvent(ServerEventType.PlayerPickupArmor)]
-        bool OnPlayerPickupArmor(Player ply, ItemPickupBase item)
+        [PluginEvent(ServerEventType.PlayerSearchedPickup)]
+        bool OnPlayerPickedUpItem(PlayerSearchedPickupEvent args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
-                || ply.IsSCP)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
-            }
 
-            switch (item.Info.ItemId)
+            Tuple<string, object>[] itemName = 
+            {
+                new Tuple<string, object>("item", args.Item.Info.ItemId) 
+            };
+
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemPickedUp, '%', itemName));
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerDropItem)]
+        bool OnPlayerDropItem(PlayerDropItemEvent args)
+        {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
+                return true;
+
+            Tuple<string, object>[] itemName =
+            {
+                new Tuple<string, object>("item", args.Item.ItemTypeId)
+            };
+
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemDropped, '%', itemName));
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerPickupAmmo)]
+        bool OnPlayerPickedUpAmmo(PlayerPickupAmmoEvent args)
+        {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
+                return true;
+
+            Tuple<string, object>[] itemName =
+            {
+                new Tuple<string, object>("item", args.Item.Info.ItemId)
+            };
+
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.AmmoPickedUp, '%', itemName));
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerDroppedAmmo)]
+        bool OnPlayerDroppedAmmo(PlayerDroppedAmmoEvent args)
+        {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
+                return true;
+
+            Tuple<string, object>[] itemName =
+            {
+                new Tuple<string, object>("item", args.Item.Info.ItemId),
+                new Tuple<string, object>("amount", args.Amount),
+            };
+
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.AmmoDropped, '%', itemName));
+            return true;
+        }
+
+        [PluginEvent(ServerEventType.PlayerPickupArmor)]
+        bool OnPlayerPickupArmor(PlayerPickupArmorEvent args)
+        {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
+                return true;
+
+            switch (args.Item.Info.ItemId)
             {
                 case ItemType.ArmorLight:
-                    ply.SendHintToPlayer(ItemConfig.LightArmorUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.LightArmorUsedMessage);
                     break;
                 case ItemType.ArmorCombat:
-                    ply.SendHintToPlayer(ItemConfig.CombatArmorUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.CombatArmorUsedMessage);
                     break;
                 case ItemType.ArmorHeavy:
-                    ply.SendHintToPlayer(ItemConfig.HeavyArmorUsedMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.HeavyArmorUsedMessage);
                     break;
             }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerThrowProjectile)]
-        bool OnPlayerThrowProjectile(Player ply, ThrowableItem item, ThrowableItem.ProjectileSettings projectileSettings, bool fullForce)
+        bool OnPlayerThrowProjectile(PlayerThrowProjectileEvent args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
-                || ply.IsSCP)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Thrower))
                 return true;
-            }
 
-            switch (item.ItemTypeId)
+            switch (args.Item.ItemTypeId)
             {
                 case ItemType.GrenadeHE:
-                    ply.SendHintToPlayer(ItemConfig.GrenadeUsedMessage);
+                    args.Thrower.SendHintToPlayer(ItemConfig.GrenadeUsedMessage);
                     break;
                 case ItemType.GrenadeFlash:
-                    ply.SendHintToPlayer(ItemConfig.FlashGrenadeUsedMessage);
+                    args.Thrower.SendHintToPlayer(ItemConfig.FlashGrenadeUsedMessage);
                     break;
                 case ItemType.SCP018:
-                    ply.SendHintToPlayer(ItemConfig.Scp018UsedMessage);
+                    args.Thrower.SendHintToPlayer(ItemConfig.Scp018UsedMessage);
                     break;
                 case ItemType.SCP2176:
-                    ply.SendHintToPlayer(ItemConfig.Scp2176UsedMessage);
+                    args.Thrower.SendHintToPlayer(ItemConfig.Scp2176UsedMessage);
                     break;
             }
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerThrowItem)]
-        bool OnPlayerThrowItem(Player ply, ItemBase item, Rigidbody rigidBody)
+        bool OnPlayerThrowItem(PlayerThrowItemEvent args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages 
-                || ply.IsSCP)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
-            }
 
-            Tuple<string, object>[] pairs = new Tuple<string, object>[]
+            Tuple<string, object>[] pairs = new Tuple<string, object>[] 
             {
-                new Tuple<string, object>("item", item.ItemTypeId.ToString())
+                new Tuple<string, object>("item", args.Item.ItemTypeId.ToString())
             };
-            ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemTossed, '%', pairs));
+
+            args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemTossed, '%', pairs));
 
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerInteractScp330)]
-        bool OnPlayerInteractScp330(Player ply, int uses, bool playSound, bool allowPunishment)
+        bool OnPlayerInteractScp330(PlayerInteractScp330Event args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId)
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
-            }
             
-            ply.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpMessage);
+            args.Player.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpMessage);
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerReceiveEffect)]
-        bool OnPlayerReceiveEffect(Player ply, StatusEffectBase statusEffect, byte intensity, float duration)
+        bool OnPlayerReceiveEffect(PlayerReceiveEffectEvent args)
         {
-            if (!MainConfig.EnableItemMessages 
-                || !ToggleScpMessages.ContainsKey(ply.UserId) 
-                || !ToggleScpMessages[ply.UserId].EnableScpMessages 
-                || !ToggleScpMessages[ply.UserId].EnableItemMessages)
-            {
+            if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
-            }
 
-            switch (statusEffect)
+            switch (args.Effect)
             {
                 case SeveredHands _:
-                    ply.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpTooManyMessage);
+                    args.Player.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpTooManyMessage);
                     break;
             }
+
             return true;
         }
 
         [PluginEvent(ServerEventType.PlayerDamage)]
-        bool OnPlayerDamage(Player ply, Player attacker, DamageHandlerBase damageHandler)
+        bool OnPlayerDamage(PlayerDamageEvent args)
         {
-            if (!MainConfig.EnableDamageMessages || ply == null || attacker == null)
+            if (!MainConfig.EnableDamageMessages || args.Target == null || args.Player == null)
             {
                 return true;
             }
@@ -438,84 +477,107 @@ namespace ScpMessages
             // Create a list to hold all the tokens to replace (Then replace items in their respective index slot)
             // Order: 0 (Player), 1 (Role), 2 (Hitbox), 3 (Damage)
             Tuple<string, object>[] humanPair = new Tuple<string, object>[4];
-            humanPair[0] = new Tuple<string, object>("player", ply.Nickname);
-            humanPair[1] = new Tuple<string, object>("role", attacker.Role.ToString());
+            humanPair[0] = new Tuple<string, object>("player", args.Target.Nickname);
+            humanPair[1] = new Tuple<string, object>("role", args.Player.Role.ToString());
 
-            switch (damageHandler)
+            switch (args.DamageHandler)
             {
-                case FirearmDamageHandler fiHandler:
+                case FirearmDamageHandler fiHandler:    
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[fiHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", fiHandler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.FirearmDamageDealt, DamageConfig.FirearmDamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.FirearmDamageDealt, DamageConfig.FirearmDamageReceived);
                     break;
                 case ExplosionDamageHandler exHandler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[exHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", exHandler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.ExplosiveDamageDealt, DamageConfig.ExplosiveDamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.ExplosiveDamageDealt, DamageConfig.ExplosiveDamageReceived);
                     break;
                 case MicroHidDamageHandler micHandler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[micHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", micHandler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.MicroHidDamageDealt, DamageConfig.MicroHidDamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.MicroHidDamageDealt, DamageConfig.MicroHidDamageReceived);
                     break;
                 case JailbirdDamageHandler jaHandler:
-                    if (ply != attacker) // Swinging/using the jailbird on nothing damages the player for 0 HP (Likely a bug)
+                    if (args.Target != args.Player) // Swinging/using the jailbird on nothing damages the player for 0 HP (Likely a bug)
                     {
                         humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[jaHandler.Hitbox.ToString().ToUpperInvariant()]);
                         humanPair[3] = new Tuple<string, object>("damage", jaHandler.DealtHealthDamage);
-                        SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.JailbirdDamageDealt, DamageConfig.JailbirdDamageReceived);
+                        SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.JailbirdDamageDealt, DamageConfig.JailbirdDamageReceived);
                     }
                     break;
                 case DisruptorDamageHandler diHandler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[diHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", diHandler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.DisruptorDamageDealt, DamageConfig.DisruptorDamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.DisruptorDamageDealt, DamageConfig.DisruptorDamageReceived);
                     break;
                 case Scp018DamageHandler scp018Handler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp018Handler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", scp018Handler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp018DamageDealt, DamageConfig.Scp018DamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.Scp018DamageDealt, DamageConfig.Scp018DamageReceived);
                     break;
                 case Scp049DamageHandler scp049Handler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp049Handler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", scp049Handler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp049DamageDealt, DamageConfig.Scp049DamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.Scp049DamageDealt, DamageConfig.Scp049DamageReceived);
                     break;
                 case Scp096DamageHandler scp096Handler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp096Handler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", scp096Handler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp096DamageDealt, DamageConfig.Scp096DamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.Scp096DamageDealt, DamageConfig.Scp096DamageReceived);
                     break;
                 case Scp939DamageHandler scp939Handler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scp939Handler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", scp939Handler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.Scp939DamageDealt, DamageConfig.Scp939DamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.Scp939DamageDealt, DamageConfig.Scp939DamageReceived);
                     break;
                 case ScpDamageHandler scpHandler:
                     humanPair[2] = new Tuple<string, object>("hitbox", DamageConfig.HitboxTranslations[scpHandler.Hitbox.ToString().ToUpperInvariant()]);
                     humanPair[3] = new Tuple<string, object>("damage", scpHandler.DealtHealthDamage);
-                    SendDamageMessagesToPlayers(ply, attacker, humanPair, DamageConfig.ScpDamageDealt, DamageConfig.ScpDamageReceived);
+                    SendDamageMessagesToPlayers(args.Target, args.Player, humanPair, DamageConfig.ScpDamageDealt, DamageConfig.ScpDamageReceived);
                     break;
             }
 
             return true;
         }
 
+        [PluginEvent(ServerEventType.TeamRespawn)]
+        bool OnTeamRespawn(TeamRespawnEvent args)
+        {
+            if (!MainConfig.EnableTeamRespawnMessages)
+                return true;
+
+            if (args.Team == SpawnableTeamType.NineTailedFox)
+            {
+                PeopleRespawnedOnMTF = args.Players;
+            }
+            else if (args.Team == SpawnableTeamType.ChaosInsurgency)
+            {
+                foreach (Player ply in args.Players)
+                {
+                    if (!IndividualUserPreferences[ply.UserId].EnableScpMessages || !IndividualUserPreferences[ply.UserId].EnableTeamRespawnMessages)
+                        continue;
+
+                    ply.SendHintToPlayer(TeamConfig.ChaosInsurgencySpawnMessage);
+                }
+            }
+
+            return true;
+        }
 
         void SendDamageMessagesToPlayers(Player ply, Player attacker, Tuple<string, object>[] pair, string dealtMessage, string receivedMessage)
         {
-            if (ToggleScpMessages.ContainsKey(attacker.UserId) 
-                && (ToggleScpMessages[attacker.UserId].EnableScpMessages 
-                && ToggleScpMessages[attacker.UserId].EnableDamageMessages))
+            if (IndividualUserPreferences.ContainsKey(attacker.UserId) 
+                && (IndividualUserPreferences[attacker.UserId].EnableScpMessages 
+                && IndividualUserPreferences[attacker.UserId].EnableDamageMessages))
             {
                 attacker.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(dealtMessage, '%', pair));
             }
 
             pair[0] = new Tuple<string, object>("player", attacker.Nickname);
 
-            if (ToggleScpMessages.ContainsKey(ply.UserId) 
-                && (ToggleScpMessages[attacker.UserId].EnableScpMessages 
-                && ToggleScpMessages[attacker.UserId].EnableDamageMessages))
+            if (IndividualUserPreferences.ContainsKey(ply.UserId) 
+                && (IndividualUserPreferences[attacker.UserId].EnableScpMessages 
+                && IndividualUserPreferences[attacker.UserId].EnableDamageMessages))
             {
                 ply.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(receivedMessage, '%', pair));
             }
@@ -525,14 +587,28 @@ namespace ScpMessages
         {
             try
             {
-                string contents = JsonConvert.SerializeObject(ToggleScpMessages, Formatting.Indented);
-                string filePath = Path.Combine(toggleDir, "toggles.json");
+                string contents = JsonConvert.SerializeObject(IndividualUserPreferences, Formatting.Indented);
+                string filePath = Path.Combine(_toggleDir, "toggles.json");
                 File.WriteAllText(filePath, contents);
             }
             catch (Exception)
             {
                 Log.Error("There was an error trying to save the playerbase toggle preferences", "ERROR");
             }
+        }
+
+        bool CheckPlayerForItemTogglesDisabled(Player ply, bool checkScp = true)
+        {
+            if (!MainConfig.EnableItemMessages
+                || !IndividualUserPreferences.ContainsKey(ply.UserId)
+                || !IndividualUserPreferences[ply.UserId].EnableScpMessages
+                || !IndividualUserPreferences[ply.UserId].EnableItemMessages
+                || checkScp && ply.IsSCP)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

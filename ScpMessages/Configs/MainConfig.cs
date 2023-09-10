@@ -18,6 +18,9 @@ namespace ScpMessages.Configs
         [Description("If the plugin should or should not play messages when users try to use doors/lockers/generators")]
         public bool EnableMapMessages { get; set; } = true;
 
+        [Description("If the plugin should or should not play messages when users try to use doors/lockers/generators")]
+        public bool EnableTeamRespawnMessages { get; set; } = true;
+
         [Description("If the plugin should or should not play broadcast messages when users join the server")]
         public bool EnableBroadcastMessages { get; set; } = true;
 

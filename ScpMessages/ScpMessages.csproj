@@ -29,10 +29,15 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\SCPSL Server\SCPSL_Data\Managed\Assembly-CSharp.dll</HintPath>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\SCPSL Server\SCPSL_Data\Managed\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp_publicized">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\SCPSL Server\SCPSL_Data\Managed\Assembly-CSharp_publicized.dll</HintPath>
     </Reference>
     <Reference Include="CommandSystem">
       <SpecificVersion>False</SpecificVersion>
@@ -48,7 +53,7 @@
       <HintPath>..\..\..\..\SCPSL Server\SCPSL_Data\Managed\NorthwoodLib.dll</HintPath>
     </Reference>
     <Reference Include="PluginAPI">
-      <HintPath>..\packages\Northwood.PluginAPI.13.1.0\lib\net48\PluginAPI.dll</HintPath>
+      <HintPath>..\packages\Northwood.PluginAPI.13.1.1\lib\net48\PluginAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -74,9 +79,11 @@
     <Compile Include="Configs\ItemConfig.cs" />
     <Compile Include="Configs\MainConfig.cs" />
     <Compile Include="Configs\MapConfig.cs" />
+    <Compile Include="Configs\TeamConfig.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Models\ScpMessageBroadcast.cs" />
-    <Compile Include="Models\IndividualUserToggleChoice.cs" />
+    <Compile Include="Models\IndividualUserPreferences.cs" />
+    <Compile Include="Patches\TeamRespawnMessageAfter.cs" />
     <Compile Include="ScpMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TokenReplacer.cs" />
