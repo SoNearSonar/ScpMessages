@@ -118,21 +118,6 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerJoined)]
         bool OnPlayerJoined(PlayerJoinedEvent args)
         {
-            if (args.Player.DoNotTrack)
-            {
-                if (IndividualUserPreferences.ContainsKey(args.Player.UserId))
-                {
-                    IndividualUserPreferences.Remove(args.Player.UserId);
-                }
-
-                if (MainConfig.EnableBroadcastMessages)
-                {
-                    args.Player.SendBroadcast(MainConfig.BroadcastMessages["do_not_track"].Message, MainConfig.BroadcastMessages["do_not_track"].Time);
-                }
-
-                return true;
-            }
-
             if (!IndividualUserPreferences.ContainsKey(args.Player.UserId))
             {
                 IndividualUserPreferences[args.Player.UserId] = new IndividualUserPreferences();

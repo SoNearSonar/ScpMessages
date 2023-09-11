@@ -24,12 +24,6 @@ namespace ScpMessages.Commands
                 return false;
             }
 
-            if (ply.DoNotTrack)
-            {
-               response = Environment.NewLine + "<color=red>[ScpMessages] You cannot use ScpMessage console commands because your account has do not track enabled. Messages are disabled by default</color>";
-               return true;
-            }
-
             if (arguments.Count < 1)
             {
                 response = Environment.NewLine + "<color=yellow>[ScpMessages] Usage: .scpmsg (all, damage, item, map, team, time, list, help)</color>";

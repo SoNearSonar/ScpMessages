@@ -42,15 +42,7 @@ namespace ScpMessages.Configs
                     "ScpMessages is off for you, you will not see messages at the bottom of your screen when you do certain actions\nFor usage, do <color=orange>.scpmsg</color> in your console (tilde (~) key)",
                     15
                 )
-            },
-            {
-                "do_not_track",
-                new ScpMessageBroadcast
-                (
-                    "ScpMessages is on this server which displays messages at the bottom of your screen. You have set your account to not be tracked so messages are disabled",
-                    15
-                )
-            },
+            }
         };
     }
 }
