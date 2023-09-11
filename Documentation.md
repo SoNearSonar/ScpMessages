@@ -1,8 +1,9 @@
 # Configuring messages in ScpMessages
-ScpMessages supports 3 general types of interactions:
+ScpMessages supports 4 general types of interactions:
 - Damage related events
 - Item related events
 - Map related events
+- Team respawn related events
 
 These general types of interactions have their own configuration file and some of the items within these configurations support tokens! More information below:
 
