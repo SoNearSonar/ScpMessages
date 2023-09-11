@@ -4,12 +4,14 @@
 ## Credits:
 - [Northwood Studios](https://store.steampowered.com/developer/NWStudios) - [NWAPI](https://github.com/northwood-studios/NwPluginAPI)
 - [JamesNK](https://github.com/JamesNK/) - [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)
+- [Pardeike](https://github.com/pardeike/) - [Harmony](https://github.com/pardeike/Harmony)
 
 ## Features:
 - Interactions for the following events:
 	- Items (Tossing items, throwing projectiles, picking up armor and SCP-330 candy)
 	- Map (Accessing doors, lockers, elevators, and generators (unlock only for this specific one))
 	- Damage (Humans attacking other humans or SCP's, SCP's attacking humans)
+	- Team (MTF and Chaos Insurgency respawning)
 - Toggles for displaying messsages entirely and for the above events
 - Tokens for dynamic message content in the above events
 - Persistent individual user message toggling in-game
