@@ -171,6 +171,7 @@ namespace ScpMessages
                 if (args.Door.ActiveLocks > 0)
                 {
                     args.Player.SendHintToPlayer(MapConfig.DoorFullLockedMessage);
+                    return true;
                 }
 
                 if (args.Player.CurrentItem is KeycardItem)
