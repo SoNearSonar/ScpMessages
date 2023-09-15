@@ -43,7 +43,7 @@ namespace ScpMessages
         [PluginConfig("team_config.yml")]
         public TeamConfig TeamConfig;
 
-        private const string Version = "2.0.0";
+        private const string Version = "2.1.0";
         private readonly string _toggleDir = Path.Combine(Paths.Configs, "ScpMessages", "Stored");
         private Harmony _harmony;
 
