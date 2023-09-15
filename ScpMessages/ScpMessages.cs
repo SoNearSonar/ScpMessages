@@ -1,6 +1,8 @@
 ﻿using CustomPlayerEffects;
 using HarmonyLib;
+using InventorySystem.Items;
 using InventorySystem.Items.Keycards;
+using InventorySystem.Items.Usables.Scp330;
 using Newtonsoft.Json;
 using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
@@ -422,7 +424,6 @@ namespace ScpMessages
             };
 
             args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.ItemTossed, '%', pairs));
-
             return true;
         }
 
@@ -432,7 +433,28 @@ namespace ScpMessages
             if (CheckPlayerForItemTogglesDisabled(args.Player))
                 return true;
             
-            args.Player.SendHintToPlayer(ItemConfig.Scp330CandyPickedUpMessage);
+            foreach (ItemBase item in args.Player.Items)
+            {
+                if (!(item is Scp330Bag bag))
+                    continue;
+
+                int candyCount = bag.Candies.Count - 1;
+                CandyKindID id = bag.Candies[candyCount];
+
+                if (id != CandyKindID.Pink)
+                {
+                    Tuple<string, object>[] pairs = new Tuple<string, object>[]
+                    {
+                        new Tuple<string, object>("color", ItemConfig.Scp330CandyTranslations[id.ToString().ToUpperInvariant()])
+                    };
+
+                    args.Player.SendHintToPlayer(TokenReplacer.ReplaceAfterToken(ItemConfig.Scp330CandyPickedUpMessage, '%', pairs));
+                }
+                else
+                {
+                    args.Player.SendHintToPlayer(ItemConfig.Scp330PinkCandyPickedUpMessage);
+                }
+            }
             return true;
         }
 

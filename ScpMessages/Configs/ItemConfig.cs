@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace ScpMessages.Configs
 {
@@ -53,7 +54,10 @@ namespace ScpMessages.Configs
         public string Scp2176UsedMessage { get; set; } = "You threw SCP-2176";
 
         [Description("The message that is displayed when a player picks up candy from SCP-330 (a bowl with candies that grant various effects)")]
-        public string Scp330CandyPickedUpMessage { get; set; } = "You picked up a SCP-330 candy";
+        public string Scp330CandyPickedUpMessage { get; set; } = "You picked up a %color candy from SCP-330";
+
+        [Description("The message that is displayed when a player picks up a pink candy from SCP-330 (Not part of natural gameplay)")]
+        public string Scp330PinkCandyPickedUpMessage { get; set; } = "You picked up a pink candy from SCP-330";
 
         [Description("The message that is displayed when a player picks up more than two candies from SCP-330")]
         public string Scp330CandyPickedUpTooManyMessage { get; set; } = "Your hands got severed at the wrist";
@@ -72,5 +76,17 @@ namespace ScpMessages.Configs
 
         [Description("The message that is displayed when a player picks up ammo")]
         public string AmmoPickedUp { get; set; } = "You picked up a box of %item ammo";
+
+        [Description("The name of each candy color for a candy from SCP-330 (Left = Candy color name, Right = Translated name (Change this part))")]
+        public Dictionary<string, string> Scp330CandyTranslations { get; set; } = new Dictionary<string, string>()
+        {
+            { "RAINBOW", "rainbow" },
+            { "YELLOW", "yellow" },
+            { "PURPLE", "purple" },
+            { "RED", "red" },
+            { "GREEN", "green" },
+            { "BLUE", "blue" },
+            { "NONE", "none" },
+        };
     }
 }
