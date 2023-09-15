@@ -17,9 +17,10 @@ The following tokens work for all messages within the damage config:
 ```
 
 ## Item interaction tokens
-The following token is the only one that is in this config and it is for the ItemTossed, ItemDropped, ItemPickedUp, AmmoDropped, AmmoPickedUp messages within the item config:
+The following token work for specific messages within the item config:
 ```
-- %item | The item name that was thrown
+- %item | The item name that was thrown (ItemTossed, ItemDropped, ItemPickedUp, AmmoDropped, AmmoPickedUp)
+- %color | The color of the SCP-330 candy piece that was picked up (Scp330CandyPickedUpMessage)
 ```
 
 ## Map interaction tokens
@@ -47,4 +48,13 @@ ScpMessages has one console command for individually toggling plugin messages:
 -> list (Lists all the interactions that are true/false for you)
 -> help (Lists all the arguments above)
 ```
-Example usage: ```.scpmsg all```
+
+# Console command use
+Example usages: 
+```
+.scpmsg all
+.scpmsg Team
+.scpmsg list
+.scpmsg time 5
+.scpmsg time show
+```
