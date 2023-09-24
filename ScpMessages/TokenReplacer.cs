@@ -32,10 +32,16 @@ namespace ScpMessages
         /// <returns>The string after replacement</returns>
         public static string ReplaceAfterToken(this string source, char token, Tuple<string, object>[] valuePairs)
         {
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                return string.Empty;
+            }
+
             if (valuePairs == null)
             {
                 throw new ArgumentNullException("valuePairs");
             }
+
             StringBuilder builder = new StringBuilder(Convert.ToInt32(Math.Ceiling(source.Length * 1.5f)));
 
             int i = 0;

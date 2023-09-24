@@ -354,7 +354,7 @@ namespace ScpMessages
         [PluginEvent(ServerEventType.PlayerDroppedAmmo)]
         bool OnPlayerDroppedAmmo(PlayerDroppedAmmoEvent args)
         {
-            if (CheckPlayerForItemTogglesDisabled(args.Player))
+            if (CheckPlayerForItemTogglesDisabled(args.Player) || args.Player.Health <= 0)
                 return true;
 
             Tuple<string, object>[] itemName =
